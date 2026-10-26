@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Button, IconButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
+import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
 import { api, useApi, type Category } from '../lib/api.ts'
@@ -24,6 +25,7 @@ export function Categories() {
   const [sort, setSort] = useState<SortKey>('name')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string>()
+  const [pendingDelete, setPendingDelete] = useState<Category>()
 
   const add = async (e: FormEvent) => {
     e.preventDefault()
@@ -41,10 +43,7 @@ export function Categories() {
   }
 
   const remove = async (c: Category) => {
-    const used = c.count
-      ? `${c.count} existing expense${c.count === 1 ? '' : 's'} will keep this label.`
-      : 'No expenses use it.'
-    if (!window.confirm(`Delete "${c.name}"? ${used}`)) return
+    setPendingDelete(undefined)
     try {
       await api(`/categories/${c.id}`, { method: 'DELETE' })
       setFormError(undefined)
@@ -132,7 +131,7 @@ export function Categories() {
                     {c.count} expense{c.count === 1 ? '' : 's'}
                   </span>
                 </div>
-                <IconButton onClick={() => remove(c)} aria-label={`Delete ${c.name}`}>
+                <IconButton onClick={() => setPendingDelete(c)} aria-label={`Delete ${c.name}`}>
                   <Icon name="close" size={18} />
                 </IconButton>
               </li>
@@ -140,6 +139,19 @@ export function Categories() {
           </ul>
         )}
       </Card>
+
+      {pendingDelete && (
+        <ConfirmToast
+          title={`Delete "${pendingDelete.name}"?`}
+          confirmLabel="Delete"
+          onConfirm={() => remove(pendingDelete)}
+          onCancel={() => setPendingDelete(undefined)}
+        >
+          {pendingDelete.count
+            ? `${pendingDelete.count} existing expense${pendingDelete.count === 1 ? '' : 's'} will keep this label.`
+            : 'No expenses use it.'}
+        </ConfirmToast>
+      )}
     </div>
   )
 }
