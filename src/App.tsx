@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AppLayout } from './components/layout/AppLayout.tsx'
 import { navItems, type NavId } from './config/navigation.ts'
 import { Dashboard } from './pages/Dashboard.tsx'
+import { Expenses } from './pages/Expenses.tsx'
 import { Placeholder } from './pages/Placeholder.tsx'
 
 function App() {
@@ -10,7 +11,13 @@ function App() {
 
   return (
     <AppLayout active={active} onNavigate={setActive}>
-      {active === 'dashboard' ? <Dashboard /> : <Placeholder title={current.label} />}
+      {active === 'dashboard' ? (
+        <Dashboard />
+      ) : active === 'expenses' ? (
+        <Expenses />
+      ) : (
+        <Placeholder title={current.label} />
+      )}
     </AppLayout>
   )
 }
