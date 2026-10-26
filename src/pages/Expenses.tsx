@@ -3,12 +3,12 @@ import { Button, IconButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
-import { CATEGORIES } from '../../shared/categories.ts'
 import {
   api,
   formatDate,
   formatMoney,
   useApi,
+  type Category,
   type Expense,
   type NewExpense,
 } from '../lib/api.ts'
@@ -20,6 +20,7 @@ const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in loca
 
 export function Expenses() {
   const { data: expenses, error, loading, reload } = useApi<Expense[]>('/expenses')
+  const { data: categories } = useApi<Category[]>('/categories')
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [date, setDate] = useState(today)
@@ -89,9 +90,9 @@ export function Expenses() {
               <option value="" disabled>
                 Select a category
               </option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {categories?.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
                 </option>
               ))}
             </select>

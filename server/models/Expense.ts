@@ -1,11 +1,12 @@
 import { model, Schema } from 'mongoose'
-import { CATEGORIES } from '../../shared/categories.ts'
 
 // Amounts are stored as integer cents to avoid floating-point rounding.
 const expenseSchema = new Schema(
   {
     title: { type: String, required: true, trim: true, maxlength: 120 },
-    category: { type: String, required: true, enum: CATEGORIES },
+    // Must name an existing Category when created (checked in the route); kept as plain text so
+    // deleting a category later leaves old expenses intact.
+    category: { type: String, required: true },
     // Calendar day, stored as UTC midnight and displayed in UTC so it never shifts by timezone.
     date: { type: Date, required: true, index: true },
     amountCents: {

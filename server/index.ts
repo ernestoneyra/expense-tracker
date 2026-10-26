@@ -1,7 +1,9 @@
 import express, { type ErrorRequestHandler } from 'express'
 import mongoose from 'mongoose'
 import { connectDb } from './db.ts'
+import { seedCategories } from './models/Category.ts'
 import { budgetRouter } from './routes/budget.ts'
+import { categoriesRouter } from './routes/categories.ts'
 import { expensesRouter } from './routes/expenses.ts'
 import { summaryRouter } from './routes/summary.ts'
 
@@ -14,6 +16,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/expenses', expensesRouter)
+app.use('/api/categories', categoriesRouter)
 app.use('/api/budget', budgetRouter)
 app.use('/api/summary', summaryRouter)
 
@@ -34,6 +37,7 @@ const port = Number(process.env.PORT) || 3001
 
 try {
   await connectDb()
+  await seedCategories()
 } catch (err) {
   console.error('Failed to connect to MongoDB:', err instanceof Error ? err.message : err)
   process.exit(1)

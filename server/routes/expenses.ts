@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { Category, NAME_COLLATION } from '../models/Category.ts'
 import { Expense } from '../models/Expense.ts'
 
 export const expensesRouter = Router()
@@ -11,7 +12,16 @@ expensesRouter.get('/', async (req, res) => {
 
 expensesRouter.post('/', async (req, res) => {
   const { title, category, date, amountCents } = req.body ?? {}
-  const expense = await Expense.create({ title, category, date, amountCents })
+  // Look the name up ignoring case and store the canonical spelling.
+  const match =
+    typeof category === 'string' && category.trim()
+      ? await Category.findOne({ name: category.trim() }).collation(NAME_COLLATION)
+      : null
+  if (!match) {
+    res.status(400).json({ error: 'Choose an existing category' })
+    return
+  }
+  const expense = await Expense.create({ title, category: match.name, date, amountCents })
   res.status(201).json(expense)
 })
 

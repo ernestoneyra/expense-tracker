@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AppLayout } from './components/layout/AppLayout.tsx'
 import { navItems, type NavId } from './config/navigation.ts'
+import { Categories } from './pages/Categories.tsx'
 import { Dashboard } from './pages/Dashboard.tsx'
 import { Expenses } from './pages/Expenses.tsx'
 import { Placeholder } from './pages/Placeholder.tsx'
@@ -15,6 +16,8 @@ function App() {
         <Dashboard />
       ) : active === 'expenses' ? (
         <Expenses />
+      ) : active === 'categories' ? (
+        <Categories />
       ) : (
         <Placeholder title={current.label} />
       )}

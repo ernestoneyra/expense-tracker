@@ -17,6 +17,13 @@ export interface NewExpense {
   amountCents: number
 }
 
+export interface Category {
+  id: string
+  name: string
+  /** How many expenses use this category. */
+  count: number
+}
+
 export interface Summary {
   spentCents: number
   prevSpentCents: number
