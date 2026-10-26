@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { usePreferences } from '../../i18n/PreferencesContext.ts'
 
 interface ConfirmToastProps {
   title: string
@@ -9,6 +10,8 @@ interface ConfirmToastProps {
 }
 
 export function ConfirmToast({ title, children, confirmLabel, onConfirm, onCancel }: ConfirmToastProps) {
+  const { t } = usePreferences()
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel()
     window.addEventListener('keydown', onKey)
@@ -37,7 +40,7 @@ export function ConfirmToast({ title, children, confirmLabel, onConfirm, onCance
           onClick={onCancel}
           className="min-h-10 cursor-pointer rounded-[10px] border border-line px-3.5 font-semibold text-body hover:bg-hover hover:text-strong"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           type="button"

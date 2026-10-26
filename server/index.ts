@@ -5,6 +5,8 @@ import { seedCategories } from './models/Category.ts'
 import { budgetRouter } from './routes/budget.ts'
 import { categoriesRouter } from './routes/categories.ts'
 import { expensesRouter } from './routes/expenses.ts'
+import { ratesRouter } from './routes/rates.ts'
+import { RatesUnavailableError } from './rates.ts'
 import { summaryRouter } from './routes/summary.ts'
 
 const app = express()
@@ -19,6 +21,7 @@ app.use('/api/expenses', expensesRouter)
 app.use('/api/categories', categoriesRouter)
 app.use('/api/budget', budgetRouter)
 app.use('/api/summary', summaryRouter)
+app.use('/api/rates', ratesRouter)
 
 // Bad input (validation / malformed ids) is the client's fault; anything else is a 500.
 // Express identifies error handlers by their 4-argument signature, so `_next` must stay.
@@ -26,6 +29,10 @@ app.use('/api/summary', summaryRouter)
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) {
     res.status(400).json({ error: err.message })
+    return
+  }
+  if (err instanceof RatesUnavailableError) {
+    res.status(503).json({ error: err.message })
     return
   }
   console.error(err)

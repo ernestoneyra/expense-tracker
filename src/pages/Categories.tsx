@@ -4,6 +4,8 @@ import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
+import type { MessageKey } from '../i18n/config.ts'
+import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, useApi, type Category } from '../lib/api.ts'
 
 type SortKey = 'name' | 'frequency'
@@ -14,12 +16,13 @@ const sorters: Record<SortKey, (a: Category, b: Category) => number> = {
   frequency: (a, b) => b.count - a.count || a.name.localeCompare(b.name),
 }
 
-const sortOptions: { key: SortKey; label: string }[] = [
-  { key: 'name', label: 'A–Z' },
-  { key: 'frequency', label: 'Most used' },
+const sortOptions: { key: SortKey; labelKey: MessageKey }[] = [
+  { key: 'name', labelKey: 'categories.sortName' },
+  { key: 'frequency', labelKey: 'categories.sortFrequency' },
 ]
 
 export function Categories() {
+  const { t } = usePreferences()
   const { data: categories, error, loading, reload } = useApi<Category[]>('/categories')
   const [name, setName] = useState('')
   const [sort, setSort] = useState<SortKey>('name')
@@ -57,27 +60,27 @@ export function Categories() {
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
-      <PageHeader title="Categories" subtitle="Organize the labels you sort your spending by." />
+      <PageHeader title={t('categories.title')} subtitle={t('categories.subtitle')} />
 
       <Card className="p-4 nav:p-5" aria-labelledby="add-category-title">
         <h2 id="add-category-title" className="pb-3 text-[17px] font-semibold text-strong">
-          New category
+          {t('categories.new')}
         </h2>
         <form onSubmit={add} className="flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-end">
           <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
-            Name
+            {t('categories.name')}
             <input
               required
               maxLength={40}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Pets"
+              placeholder={t('categories.namePlaceholder')}
               className="min-h-10 w-full rounded-[10px] border border-line bg-surface px-3 text-strong placeholder:text-muted"
             />
           </label>
           <Button type="submit" disabled={submitting}>
             <Icon name="plus" size={18} />
-            Add category
+            {t('categories.add')}
           </Button>
         </form>
         {formError && (
@@ -90,9 +93,9 @@ export function Categories() {
       <Card className="px-5 pt-2 pb-3" aria-labelledby="all-categories-title">
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3.5 pb-2">
           <h2 id="all-categories-title" className="text-[17px] font-semibold text-strong">
-            All categories
+            {t('categories.all')}
           </h2>
-          <div role="group" aria-label="Sort categories" className="flex gap-1">
+          <div role="group" aria-label={t('categories.sortLabel')} className="flex gap-1">
             {sortOptions.map((o) => (
               <button
                 key={o.key}
@@ -105,19 +108,19 @@ export function Categories() {
                     : 'text-body hover:bg-hover hover:text-strong'
                 }`}
               >
-                {o.label}
+                {t(o.labelKey)}
               </button>
             ))}
           </div>
         </div>
         {loading ? (
-          <p className="border-t border-line py-6 text-center text-muted">Loading…</p>
+          <p className="border-t border-line py-6 text-center text-muted">{t('common.loading')}</p>
         ) : error || !sorted ? (
           <p className="border-t border-line py-6 text-center text-muted" role="alert">
-            Couldn't load categories: {error}. Is the API server running?
+            {t('categories.loadError', { error: error ?? '' })}
           </p>
         ) : sorted.length === 0 ? (
-          <p className="border-t border-line py-6 text-center text-muted">No categories yet.</p>
+          <p className="border-t border-line py-6 text-center text-muted">{t('categories.empty')}</p>
         ) : (
           <ul className="m-0 list-none p-0">
             {sorted.map((c) => (
@@ -128,10 +131,10 @@ export function Categories() {
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate font-medium text-strong">{c.name}</span>
                   <span className="text-[13px] text-muted">
-                    {c.count} expense{c.count === 1 ? '' : 's'}
+                    {t('categories.expenses', { count: c.count })}
                   </span>
                 </div>
-                <IconButton onClick={() => setPendingDelete(c)} aria-label={`Delete ${c.name}`}>
+                <IconButton onClick={() => setPendingDelete(c)} aria-label={t('categories.deleteLabel', { name: c.name })}>
                   <Icon name="close" size={18} />
                 </IconButton>
               </li>
@@ -142,14 +145,14 @@ export function Categories() {
 
       {pendingDelete && (
         <ConfirmToast
-          title={`Delete "${pendingDelete.name}"?`}
-          confirmLabel="Delete"
+          title={t('categories.confirmTitle', { name: pendingDelete.name })}
+          confirmLabel={t('common.delete')}
           onConfirm={() => remove(pendingDelete)}
           onCancel={() => setPendingDelete(undefined)}
         >
           {pendingDelete.count
-            ? `${pendingDelete.count} existing expense${pendingDelete.count === 1 ? '' : 's'} will keep this label.`
-            : 'No expenses use it.'}
+            ? t('categories.confirmUsed', { count: pendingDelete.count })
+            : t('categories.confirmUnused')}
         </ConfirmToast>
       )}
     </div>

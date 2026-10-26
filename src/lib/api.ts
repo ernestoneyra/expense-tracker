@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { Currency } from '../i18n/config.ts'
 
 export interface Expense {
   id: string
@@ -7,6 +8,8 @@ export interface Expense {
   description?: string
   /** ISO timestamp at UTC midnight of the expense's calendar day. */
   date: string
+  /** The currency amountCents was entered in. */
+  currency: Currency
   amountCents: number
 }
 
@@ -16,6 +19,7 @@ export interface NewExpense {
   description?: string
   /** YYYY-MM-DD */
   date: string
+  currency: Currency
   amountCents: number
 }
 
@@ -27,6 +31,8 @@ export interface Category {
 }
 
 export interface Summary {
+  /** The currency every amount below is in, except those in `recent`. */
+  currency: Currency
   spentCents: number
   prevSpentCents: number
   transactions: number
@@ -67,11 +73,3 @@ export function useApi<T>(path: string) {
   const reload = useCallback(() => setTick((t) => t + 1), [])
   return { ...state, reload }
 }
-
-const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-
-export const formatMoney = (cents: number) => currency.format(cents / 100)
-
-// Dates are calendar days stored at UTC midnight, so format in UTC to avoid off-by-one shifts.
-export const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })

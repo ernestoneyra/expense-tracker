@@ -1,4 +1,5 @@
 import { navItems, type NavId } from '../../config/navigation.ts'
+import { usePreferences } from '../../i18n/PreferencesContext.ts'
 import { Icon } from '../ui/Icon.tsx'
 
 interface SidebarProps {
@@ -8,6 +9,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, active, onSelect }: SidebarProps) {
+  const { t } = usePreferences()
   return (
     <aside
       id="app-sidebar"
@@ -28,7 +30,7 @@ export function Sidebar({ open, active, onSelect }: SidebarProps) {
                 onClick={() => onSelect(item.id)}
               >
                 <Icon name={item.icon} />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
               </button>
             </li>
           ))}

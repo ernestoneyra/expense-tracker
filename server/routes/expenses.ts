@@ -11,7 +11,7 @@ expensesRouter.get('/', async (req, res) => {
 })
 
 expensesRouter.post('/', async (req, res) => {
-  const { title, category, description, date, amountCents } = req.body ?? {}
+  const { title, category, description, currency, date, amountCents } = req.body ?? {}
   // Look the name up ignoring case and store the canonical spelling.
   const match =
     typeof category === 'string' && category.trim()
@@ -26,6 +26,7 @@ expensesRouter.post('/', async (req, res) => {
     category: match.name,
     // Blank means "no description", so don't store an empty string.
     description: typeof description === 'string' && description.trim() ? description : undefined,
+    currency,
     date,
     amountCents,
   })

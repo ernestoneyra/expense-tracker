@@ -1,4 +1,5 @@
 import type { IconName } from '../components/ui/Icon.tsx'
+import type { MessageKey } from '../i18n/config.ts'
 
 export type NavId =
   | 'dashboard'
@@ -11,16 +12,16 @@ export type NavId =
 
 export interface NavItem {
   id: NavId
-  label: string
+  labelKey: MessageKey
   icon: IconName
 }
 
 export const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { id: 'expenses', label: 'Expenses', icon: 'expenses' },
-  { id: 'categories', label: 'Categories', icon: 'categories' },
-  { id: 'budgets', label: 'Budgets', icon: 'budgets' },
-  { id: 'reports', label: 'Reports', icon: 'reports' },
-  { id: 'recurring', label: 'Recurring', icon: 'recurring' },
-  { id: 'settings', label: 'Settings', icon: 'settings' },
+  { id: 'dashboard', labelKey: 'nav.dashboard', icon: 'dashboard' },
+  { id: 'expenses', labelKey: 'nav.expenses', icon: 'expenses' },
+  { id: 'categories', labelKey: 'nav.categories', icon: 'categories' },
+  { id: 'budgets', labelKey: 'nav.budgets', icon: 'budgets' },
+  { id: 'reports', labelKey: 'nav.reports', icon: 'reports' },
+  { id: 'recurring', labelKey: 'nav.recurring', icon: 'recurring' },
+  { id: 'settings', labelKey: 'nav.settings', icon: 'settings' },
 ]

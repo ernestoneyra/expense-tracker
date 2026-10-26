@@ -1,4 +1,5 @@
 import { model, Schema } from 'mongoose'
+import { CURRENCIES, DEFAULT_CURRENCY } from '../rates.ts'
 
 // Amounts are stored as integer cents to avoid floating-point rounding.
 const expenseSchema = new Schema(
@@ -11,6 +12,9 @@ const expenseSchema = new Schema(
     description: { type: String, trim: true, maxlength: 500 },
     // Calendar day, stored as UTC midnight and displayed in UTC so it never shifts by timezone.
     date: { type: Date, required: true, index: true },
+    // amountCents is in this currency. Expenses saved before currencies existed have no value
+    // here and count as DEFAULT_CURRENCY (aggregations must use $ifNull for the same reason).
+    currency: { type: String, enum: CURRENCIES, default: DEFAULT_CURRENCY },
     amountCents: {
       type: Number,
       required: true,
