@@ -7,6 +7,8 @@ const expenseSchema = new Schema(
     // Must name an existing Category when created (checked in the route); kept as plain text so
     // deleting a category later leaves old expenses intact.
     category: { type: String, required: true },
+    // Optional free-text note; older expenses simply don't have one.
+    description: { type: String, trim: true, maxlength: 500 },
     // Calendar day, stored as UTC midnight and displayed in UTC so it never shifts by timezone.
     date: { type: Date, required: true, index: true },
     amountCents: {

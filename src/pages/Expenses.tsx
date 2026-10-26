@@ -23,6 +23,7 @@ export function Expenses() {
   const { data: categories } = useApi<Category[]>('/categories')
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
+  const [description, setDescription] = useState('')
   const [date, setDate] = useState(today)
   const [amount, setAmount] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -33,6 +34,7 @@ export function Expenses() {
     const body: NewExpense = {
       title,
       category,
+      description,
       date,
       amountCents: Math.round(Number(amount) * 100),
     }
@@ -40,6 +42,7 @@ export function Expenses() {
     try {
       await api('/expenses', { method: 'POST', body: JSON.stringify(body) })
       setTitle('')
+      setDescription('')
       setAmount('')
       setFormError(undefined)
       reload()
@@ -121,6 +124,16 @@ export function Expenses() {
               className={inputClass}
             />
           </label>
+          <label className="flex flex-col gap-1 text-sm text-muted min-[560px]:col-span-2 nav:col-span-4">
+            Description (optional)
+            <input
+              maxLength={500}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Weekly groceries"
+              className={inputClass}
+            />
+          </label>
           <div className="flex items-center gap-3 min-[560px]:col-span-2 nav:col-span-4">
             <Button type="submit" disabled={submitting}>
               <Icon name="plus" size={18} />
@@ -159,6 +172,9 @@ export function Expenses() {
                   <span className="text-[13px] text-muted">
                     {e.category} · {formatDate(e.date)}
                   </span>
+                  {e.description && (
+                    <span className="truncate text-[13px] text-muted">{e.description}</span>
+                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <span className="font-semibold text-strong tabular-nums">

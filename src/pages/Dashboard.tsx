@@ -150,6 +150,9 @@ export function Dashboard() {
                   <span className="text-[13px] text-muted">
                     {e.category} · {formatDate(e.date)}
                   </span>
+                  {e.description && (
+                    <span className="truncate text-[13px] text-muted">{e.description}</span>
+                  )}
                 </div>
                 <span className="shrink-0 font-semibold text-strong tabular-nums">
                   {formatMoney(e.amountCents)}

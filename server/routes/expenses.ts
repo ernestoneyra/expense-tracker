@@ -11,7 +11,7 @@ expensesRouter.get('/', async (req, res) => {
 })
 
 expensesRouter.post('/', async (req, res) => {
-  const { title, category, date, amountCents } = req.body ?? {}
+  const { title, category, description, date, amountCents } = req.body ?? {}
   // Look the name up ignoring case and store the canonical spelling.
   const match =
     typeof category === 'string' && category.trim()
@@ -21,7 +21,14 @@ expensesRouter.post('/', async (req, res) => {
     res.status(400).json({ error: 'Choose an existing category' })
     return
   }
-  const expense = await Expense.create({ title, category: match.name, date, amountCents })
+  const expense = await Expense.create({
+    title,
+    category: match.name,
+    // Blank means "no description", so don't store an empty string.
+    description: typeof description === 'string' && description.trim() ? description : undefined,
+    date,
+    amountCents,
+  })
   res.status(201).json(expense)
 })
 

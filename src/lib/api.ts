@@ -4,6 +4,7 @@ export interface Expense {
   id: string
   title: string
   category: string
+  description?: string
   /** ISO timestamp at UTC midnight of the expense's calendar day. */
   date: string
   amountCents: number
@@ -12,6 +13,7 @@ export interface Expense {
 export interface NewExpense {
   title: string
   category: string
+  description?: string
   /** YYYY-MM-DD */
   date: string
   amountCents: number
