@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
+import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
+import { categoryIcon } from '../config/categoryIcons.ts'
 import { fractionDigitsFor, amountStepFor } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, useApi, type Summary } from '../lib/api.ts'
 
 export function Dashboard() {
-  const { t, formatMoney, formatIn, ratesReady, formatDate, currency } = usePreferences()
+  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, categoryName } = usePreferences()
   // Amounts come back converted into the display currency, so changing it refetches.
   const { data, error, loading, reload } = useApi<Summary>(`/summary?currency=${currency}`)
   const [editingBudget, setEditingBudget] = useState(false)
@@ -47,7 +49,7 @@ export function Dashboard() {
     {
       id: 'top',
       label: t('dashboard.topCategory'),
-      value: data.topCategory?.name ?? '—',
+      value: data.topCategory ? categoryName(data.topCategory.name) : '—',
       hint: data.topCategory ? formatMoney(data.topCategory.cents) : t('dashboard.noSpendingYet'),
     },
     {
@@ -165,8 +167,9 @@ export function Dashboard() {
               >
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate font-medium text-strong">{e.title}</span>
-                  <span className="text-[13px] text-muted">
-                    {e.category} · {formatDate(e.date)}
+                  <span className="flex items-center gap-1 text-[13px] text-muted">
+                    <Icon name={categoryIcon(e.category)} size={13} className="shrink-0" />
+                    {categoryName(e.category)} · {formatDate(e.date)}
                   </span>
                   {e.description && (
                     <span className="truncate text-[13px] text-muted">{e.description}</span>

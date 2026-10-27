@@ -85,6 +85,18 @@ export const en = {
   'categories.confirmUsed_other': '{count} existing expenses will keep this label.',
   'categories.confirmUnused': 'No expenses use it.',
 
+  // The categories every new sandbox starts with; categories people add themselves are shown as typed.
+  'category.Housing': 'Housing',
+  'category.Groceries': 'Groceries',
+  'category.Dining': 'Dining',
+  'category.Transport': 'Transport',
+  'category.Utilities': 'Utilities',
+  'category.Healthcare': 'Healthcare',
+  'category.Entertainment': 'Entertainment',
+  'category.Shopping': 'Shopping',
+  'category.Subscriptions': 'Subscriptions',
+  'category.Other': 'Other',
+
   'settings.title': 'Settings',
   'settings.subtitle': 'Choose the language and currency used throughout the app.',
   'settings.language': 'Language',

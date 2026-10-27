@@ -3,6 +3,7 @@ import { Button, IconButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
+import { categoryIcon } from '../config/categoryIcons.ts'
 import { CURRENCIES, amountStepFor, isCurrency } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, useApi, type Category, type Expense, type NewExpense } from '../lib/api.ts'
@@ -13,7 +14,7 @@ const inputClass =
 const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 
 export function Expenses() {
-  const { t, formatMoney, formatIn, ratesReady, formatDate, currency } = usePreferences()
+  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, categoryName } = usePreferences()
   const { data: expenses, error, loading, reload } = useApi<Expense[]>('/expenses')
   const { data: categories } = useApi<Category[]>('/categories')
   const [title, setTitle] = useState('')
@@ -93,7 +94,7 @@ export function Expenses() {
               </option>
               {categories?.map((c) => (
                 <option key={c.id} value={c.name}>
-                  {c.name}
+                  {categoryName(c.name)}
                 </option>
               ))}
             </select>
@@ -110,7 +111,7 @@ export function Expenses() {
           </label>
           <label className="flex flex-col gap-1 text-sm text-muted">
             {t('expenses.amount')}
-            <div className="flex gap-2">
+            <div className="grid grid-cols-[65fr_35fr] gap-2">
               <input
                 required
                 type="number"
@@ -126,7 +127,7 @@ export function Expenses() {
                 value={expenseCurrency}
                 onChange={(e) => isCurrency(e.target.value) && setExpenseCurrency(e.target.value)}
                 aria-label={t('expenses.currency')}
-                className={`${inputClass} w-auto shrink-0`}
+                className={`${inputClass} min-w-0`}
               >
                 {CURRENCIES.map((c) => (
                   <option key={c} value={c}>
@@ -181,8 +182,9 @@ export function Expenses() {
               >
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate font-medium text-strong">{e.title}</span>
-                  <span className="text-[13px] text-muted">
-                    {e.category} · {formatDate(e.date)}
+                  <span className="flex items-center gap-1 text-[13px] text-muted">
+                    <Icon name={categoryIcon(e.category)} size={13} className="shrink-0" />
+                    {categoryName(e.category)} · {formatDate(e.date)}
                   </span>
                   {e.description && (
                     <span className="truncate text-[13px] text-muted">{e.description}</span>

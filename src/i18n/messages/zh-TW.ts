@@ -85,6 +85,17 @@ export const zhTW: Messages = {
   'categories.confirmUsed_other': '現有的 {count} 筆支出仍會保留此標籤。',
   'categories.confirmUnused': '沒有任何支出使用此分類。',
 
+  'category.Housing': '居住',
+  'category.Groceries': '生鮮雜貨',
+  'category.Dining': '餐飲',
+  'category.Transport': '交通',
+  'category.Utilities': '水電費',
+  'category.Healthcare': '醫療保健',
+  'category.Entertainment': '娛樂',
+  'category.Shopping': '購物',
+  'category.Subscriptions': '訂閱',
+  'category.Other': '其他',
+
   'settings.title': '設定',
   'settings.subtitle': '選擇整個應用程式使用的語言與貨幣。',
   'settings.language': '語言',

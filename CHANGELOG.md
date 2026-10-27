@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-10-27
+
+### Added
+
+- Icons for the ten default categories, shown on the Categories page and next to the category in the expense lists on the Dashboard and Expenses pages. Categories you create yourself get a generic tag icon.
+
+### Changed
+
+- The ten default categories are now shown in the selected language (English, Svenska, 日本語 and 繁體中文（台灣）) on the Dashboard, Expenses and Categories pages and in the category picker. Categories you create yourself are shown as typed, and the stored names stay in English. Sorting categories by name follows the selected language.
+
+### Fixed
+
+- The amount and currency fields on the Expenses form now share the row in a fixed 65/35 split, so the currency picker no longer squeezes the amount input.
+
 ## [0.6.0] - 2026-10-27
 
 ### Added
@@ -40,5 +54,6 @@ First tracked release of Expenser, a personal expense tracker.
 - `.env.example` and a README with screenshots, a feature list and setup instructions.
 - Placeholder pages for Budgets, Reports and Recurring expenses.
 
+[0.6.1]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/ernestoneyra/expense-tracker/releases/tag/0.5.0
