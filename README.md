@@ -4,15 +4,17 @@ A personal expense tracker. Log what you spend, organise it into categories, set
 
 ## Try it
 
-Run it with one command and no database account (needs [Docker](https://www.docker.com/)):
+**Live demo: <https://expenser-weeu.onrender.com>** – nothing to install. Every visitor gets a **private sandbox** pre-filled with demo expenses, so you can click around freely and nobody sees anyone else's data. Use **Settings → Reset demo data** to start over. Sandboxes are deleted after a week of inactivity.
+
+The demo runs on a free hosting tier that sleeps when idle, so the first load can take about 30 seconds.
+
+To run it yourself with one command and no database account (needs [Docker](https://www.docker.com/)):
 
 ```bash
 docker compose up --build
 ```
 
-Then open <http://localhost:5181>. To put it on the internet so others can use it, see [Deploying](#deploying).
-
-The compose file runs the app in **demo mode** (see below): every visitor gets a **private sandbox** pre-filled with demo expenses, so there's nothing to set up and nobody sees anyone else's data. Use **Settings → Reset demo data** to start over. Sandboxes are deleted after a week of inactivity.
+Then open <http://localhost:5181>. The compose file also runs the app in demo mode (see [How the demo sandboxes work](#how-the-demo-sandboxes-work)). To host your own copy, see [Deploying](#deploying).
 
 ## Screenshots
 
@@ -103,7 +105,7 @@ npm start       # serves the API and dist/ on $PORT (default 5181)
 
 1. Create a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster and a database user used only for this demo. Under *Network Access* allow `0.0.0.0/0`, because Render's free tier has no fixed IP address.
 2. In Render choose **New → Blueprint**, pick this repository, and paste the Atlas connection string as `MONGODB_URI` when asked. [render.yaml](render.yaml) configures everything else, including a separate `expenser-demo` database.
-3. Once it's live, add the URL to the top of this README and to the repository description.
+3. Once it's live, Render shows the app's URL on the service page. The live demo above was deployed this way.
 
 The free tier sleeps after 15 minutes without traffic, so the first request afterwards takes about 30 seconds. Open the link yourself shortly before sharing it.
 
