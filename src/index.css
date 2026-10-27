@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+
+/* Below this width the sidebar becomes a drawer: `max-nav:` / `nav:` variants. */
+@theme {
+  --breakpoint-nav: 900px;
+  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Expose the theme tokens below as utilities: bg-surface, text-strong, border-line, ... */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--border);
+  --color-hover: var(--hover);
+  --color-body: var(--text);
+  --color-strong: var(--text-strong);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-bg);
+  --color-accent-contrast: var(--accent-contrast);
+}
+
+/* Colours are defined once with light-dark(); color-scheme picks the side. */
+:root {
+  --header-h: 60px;
+  --sidebar-w: 240px;
+
+  --bg: light-dark(#f5f6f8, #0e1013);
+  --surface: light-dark(#ffffff, #16191e);
+  --border: light-dark(#e4e7ec, #262a31);
+  --hover: light-dark(#f0f2f5, #1e2228);
+  --text: light-dark(#525866, #a3a9b5);
+  --text-strong: light-dark(#0f1419, #f3f4f6);
+  --text-muted: light-dark(#868c98, #727986);
+  --accent: light-dark(#0d9467, #2bc48a);
+  --accent-text: light-dark(#0a7a54, #4ddba5);
+  --accent-bg: light-dark(rgba(13, 148, 103, 0.1), rgba(43, 196, 138, 0.14));
+  --accent-contrast: light-dark(#ffffff, #04140d);
+  --shadow: light-dark(0 10px 24px rgba(16, 24, 40, 0.14), 0 10px 24px rgba(0, 0, 0, 0.5));
+
+  /* Follows the system unless the theme toggle sets data-theme. */
+  color-scheme: light dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    min-width: 320px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
