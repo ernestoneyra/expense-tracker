@@ -9,6 +9,7 @@ import {
   type Currency,
   type Rates,
 } from '../rates.ts'
+import { sandboxOf } from '../sandbox.ts'
 
 export const summaryRouter = Router()
 
@@ -24,9 +25,9 @@ function converterTo(target: Currency) {
 
 type Convert = ReturnType<typeof converterTo>
 
-async function totalBetween(start: Date, end: Date, convert: Convert) {
+async function totalBetween(sandbox: string | null, start: Date, end: Date, convert: Convert) {
   const rows = await Expense.aggregate<{ _id: Currency; total: number; count: number }>([
-    { $match: { date: { $gte: start, $lt: end } } },
+    { $match: { sandbox, date: { $gte: start, $lt: end } } },
     { $group: { _id: currencyOf, total: { $sum: '$amountCents' }, count: { $sum: 1 } } },
   ])
   const converted = await Promise.all(rows.map((r) => convert(r.total, r._id)))
@@ -36,9 +37,9 @@ async function totalBetween(start: Date, end: Date, convert: Convert) {
   }
 }
 
-async function topCategory(start: Date, end: Date, convert: Convert) {
+async function topCategory(sandbox: string | null, start: Date, end: Date, convert: Convert) {
   const rows = await Expense.aggregate<{ _id: { category: string; currency: Currency }; total: number }>([
-    { $match: { date: { $gte: start, $lt: end } } },
+    { $match: { sandbox, date: { $gte: start, $lt: end } } },
     { $group: { _id: { category: '$category', currency: currencyOf }, total: { $sum: '$amountCents' } } },
   ])
   const totals = new Map<string, number>()
@@ -61,6 +62,7 @@ summaryRouter.get('/', async (req, res) => {
     return
   }
   const convert = converterTo(requested)
+  const sandbox = sandboxOf(res)
 
   const now = new Date()
   const monthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1))
@@ -68,11 +70,11 @@ summaryRouter.get('/', async (req, res) => {
   const prevMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1))
 
   const [month, prev, top, budget, recent] = await Promise.all([
-    totalBetween(monthStart, nextMonthStart, convert),
-    totalBetween(prevMonthStart, monthStart, convert),
-    topCategory(monthStart, nextMonthStart, convert),
-    Budget.findOne(),
-    Expense.find().sort({ date: -1, _id: -1 }).limit(5),
+    totalBetween(sandbox, monthStart, nextMonthStart, convert),
+    totalBetween(sandbox, prevMonthStart, monthStart, convert),
+    topCategory(sandbox, monthStart, nextMonthStart, convert),
+    Budget.findOne({ sandbox }),
+    Expense.find({ sandbox }).sort({ date: -1, _id: -1 }).limit(5),
   ])
 
   res.json({

@@ -3,13 +3,17 @@
   "private": true,
   "version": "0.5.0",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "concurrently -n client,server -c cyan,green \"npm:client\" \"npm:server\"",
     "client": "vite",
-    "server": "node --watch --env-file=.env server/index.ts",
+    "server": "node --use-system-ca --watch --env-file=.env server/index.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node --env-file-if-exists=.env server/index.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

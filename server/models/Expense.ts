@@ -4,6 +4,7 @@ import { CURRENCIES, DEFAULT_CURRENCY } from '../rates.ts'
 // Amounts are stored as integer cents to avoid floating-point rounding.
 const expenseSchema = new Schema(
   {
+    sandbox: { type: String, default: null },
     title: { type: String, required: true, trim: true, maxlength: 120 },
     // Must name an existing Category when created (checked in the route); kept as plain text so
     // deleting a category later leaves old expenses intact.
@@ -11,7 +12,7 @@ const expenseSchema = new Schema(
     // Optional free-text note; older expenses simply don't have one.
     description: { type: String, trim: true, maxlength: 500 },
     // Calendar day, stored as UTC midnight and displayed in UTC so it never shifts by timezone.
-    date: { type: Date, required: true, index: true },
+    date: { type: Date, required: true },
     // amountCents is in this currency. Expenses saved before currencies existed have no value
     // here and count as DEFAULT_CURRENCY (aggregations must use $ifNull for the same reason).
     currency: { type: String, enum: CURRENCIES, default: DEFAULT_CURRENCY },
@@ -29,6 +30,7 @@ const expenseSchema = new Schema(
       versionKey: false,
       transform: (_doc, ret: Record<string, unknown>) => {
         delete ret._id
+        delete ret.sandbox
         delete ret.createdAt
         delete ret.updatedAt
         return ret
@@ -36,5 +38,6 @@ const expenseSchema = new Schema(
     },
   },
 )
+expenseSchema.index({ sandbox: 1, date: -1 })
 
 export const Expense = model('Expense', expenseSchema)

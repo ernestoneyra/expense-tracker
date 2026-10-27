@@ -1,0 +1,20 @@
+# One-command local run: `docker compose up --build`, then open http://localhost:5181.
+# Uses a throwaway MongoDB container, so no Atlas account or .env file is needed.
+services:
+  app:
+    build: .
+    ports:
+      - '5181:5181'
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: expense-tracker
+      DEMO_MODE: 'true'
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:8
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Demo mode (`DEMO_MODE=true`, off by default): each browser gets a private copy of the data, so a hosted demo can be shared without visitors seeing each other's expenses. Sandboxes are deleted after a week of inactivity and capped at 500 expenses and 50 categories. Development and personal use are unchanged.
+- In demo mode every new sandbox is filled with demo data (26 expenses in several currencies, ten categories and a budget), and Settings gets a "Reset demo data" button.
+- `/api/health` reports whether demo mode is on.
+- The API server now serves the built frontend, so the whole app runs from one URL with `npm run build && npm start`.
+- `Dockerfile` and `docker-compose.yml` for a one-command local run, and a `render.yaml` blueprint for deploying to Render.
+
+### Changed
+
+- In demo mode every `/api` request except `/api/health` and `/api/rates` must send an `X-Sandbox-Id` header (the frontend does this automatically).
+- Category names are unique per sandbox (in practice still unique overall outside demo mode). Existing data keeps working outside demo mode.
+
 ## [0.5.0] - 2026-10-27
 
 First tracked release of Expenser, a personal expense tracker.
@@ -25,4 +40,5 @@ First tracked release of Expenser, a personal expense tracker.
 - `.env.example` and a README with screenshots, a feature list and setup instructions.
 - Placeholder pages for Budgets, Reports and Recurring expenses.
 
+[Unreleased]: https://github.com/ernestoneyra/expense-tracker/compare/v0.5.0...HEAD
 [0.5.0]: https://github.com/ernestoneyra/expense-tracker/releases/tag/v0.5.0

@@ -1,8 +1,10 @@
 import { model, Schema } from 'mongoose'
 import { CURRENCIES, DEFAULT_CURRENCY } from '../rates.ts'
 
-// Single-document collection holding the monthly budget.
+// One document per sandbox holding its monthly budget.
 const budgetSchema = new Schema({
+  // null outside demo mode, where there is just one budget.
+  sandbox: { type: String, default: null, unique: true },
   monthlyCents: {
     type: Number,
     required: true,

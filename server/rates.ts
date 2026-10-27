@@ -27,7 +27,16 @@ let cached: (Rates & { fetchedAt: number }) | undefined
 let inflight: Promise<Rates> | undefined
 
 async function fetchRates(): Promise<Rates> {
-  const res = await fetch(SOURCE, { signal: AbortSignal.timeout(5000) })
+  try {
+    return await requestRates()
+  } catch {
+    // One retry: transient DNS/connection hiccups are the usual cause of "fetch failed".
+    return await requestRates()
+  }
+}
+
+async function requestRates(): Promise<Rates> {
+  const res = await fetch(SOURCE, { signal: AbortSignal.timeout(10_000) })
   if (!res.ok) throw new Error(`Rates request failed (${res.status})`)
   const body = (await res.json()) as {
     result?: string
@@ -63,7 +72,9 @@ export async function getRates(): Promise<Rates> {
   try {
     return await inflight
   } catch (err) {
-    console.error('Failed to fetch exchange rates:', err instanceof Error ? err.message : err)
+    // Node's fetch hides the real reason (ENOTFOUND, ETIMEDOUT, certificate errors…) in `cause`.
+    const cause = err instanceof Error && err.cause instanceof Error ? ` (${err.cause.message})` : ''
+    console.error(`Failed to fetch exchange rates: ${err instanceof Error ? err.message : err}${cause}`)
     if (cached) return cached
     throw new RatesUnavailableError()
   }

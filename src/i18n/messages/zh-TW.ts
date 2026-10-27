@@ -91,4 +91,13 @@ export const zhTW: Messages = {
   'settings.currency': '貨幣',
   'settings.currencyNote':
     '金額會以此貨幣顯示。以其他貨幣輸入的支出會依目前匯率換算，且每筆支出都會保留輸入時的金額。',
+
+  'settings.demoTitle': '示範資料',
+  'settings.demoNote': '這是示範版本。你的支出僅限此瀏覽器使用，閒置一週後會被刪除。',
+  'settings.resetDemo': '重設示範資料',
+  'settings.resetTitle': '要重設示範資料嗎？',
+  'settings.resetBody': '你的支出、類別與預算將被換回原始的示範資料。',
+  'settings.resetConfirm': '重設',
+  'settings.resetError': '無法重設示範資料：{error}',
+  'settings.resetDone': '已還原示範資料。',
 }
