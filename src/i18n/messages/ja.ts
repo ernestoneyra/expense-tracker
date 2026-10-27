@@ -92,4 +92,13 @@ export const ja: Messages = {
   'settings.currency': '通貨',
   'settings.currencyNote':
     '金額はこの通貨で表示されます。別の通貨で入力した支出は現在の為替レートで換算され、各支出は入力時の金額を保持します。',
+
+  'settings.demoTitle': 'デモデータ',
+  'settings.demoNote': 'これはデモです。支出データはこのブラウザ専用で、1週間使用しないと削除されます。',
+  'settings.resetDemo': 'デモデータをリセット',
+  'settings.resetTitle': 'デモデータをリセットしますか？',
+  'settings.resetBody': '支出、カテゴリ、予算は元のデモデータに置き換えられます。',
+  'settings.resetConfirm': 'リセット',
+  'settings.resetError': 'デモデータをリセットできませんでした：{error}',
+  'settings.resetDone': 'デモデータを元に戻しました。',
 }

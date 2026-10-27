@@ -91,6 +91,15 @@ export const en = {
   'settings.currency': 'Currency',
   'settings.currencyNote':
     'Amounts are shown in this currency. Expenses entered in another currency are converted using the current exchange rates, and each one keeps the amount it was entered in.',
+
+  'settings.demoTitle': 'Demo data',
+  'settings.demoNote': 'This is a demo. Your expenses are private to this browser and are deleted after a week of inactivity.',
+  'settings.resetDemo': 'Reset demo data',
+  'settings.resetTitle': 'Reset demo data?',
+  'settings.resetBody': 'Your expenses, categories and budget will be replaced with the original demo data.',
+  'settings.resetConfirm': 'Reset',
+  'settings.resetError': "Couldn't reset the demo data: {error}",
+  'settings.resetDone': 'Demo data restored.',
 }
 
 export type Messages = typeof en

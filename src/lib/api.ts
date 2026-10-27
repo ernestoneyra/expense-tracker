@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Currency } from '../i18n/config.ts'
+import { getSandboxId } from './sandbox.ts'
 
 export interface Expense {
   id: string
@@ -42,10 +43,10 @@ export interface Summary {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
-    ...init,
-    headers: init?.body ? { 'content-type': 'application/json', ...init.headers } : init?.headers,
-  })
+  const headers = new Headers(init?.headers)
+  headers.set('x-sandbox-id', getSandboxId())
+  if (init?.body) headers.set('content-type', 'application/json')
+  const res = await fetch(`/api${path}`, { ...init, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new Error(body?.error ?? `Request failed (${res.status})`)

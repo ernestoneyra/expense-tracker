@@ -90,4 +90,13 @@ export const sv: Messages = {
   'settings.currency': 'Valuta',
   'settings.currencyNote':
     'Belopp visas i den här valutan. Utgifter som angetts i en annan valuta räknas om med aktuella växelkurser, och varje utgift behåller beloppet den angavs med.',
+
+  'settings.demoTitle': 'Demodata',
+  'settings.demoNote': 'Det här är en demo. Dina utgifter är privata för den här webbläsaren och raderas efter en veckas inaktivitet.',
+  'settings.resetDemo': 'Återställ demodata',
+  'settings.resetTitle': 'Återställa demodata?',
+  'settings.resetBody': 'Dina utgifter, kategorier och din budget ersätts med den ursprungliga demodatan.',
+  'settings.resetConfirm': 'Återställ',
+  'settings.resetError': 'Kunde inte återställa demodatan: {error}',
+  'settings.resetDone': 'Demodatan har återställts.',
 }
