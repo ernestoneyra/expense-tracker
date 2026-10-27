@@ -22,7 +22,7 @@ Then open <http://localhost:5181>. The compose file also runs the app in demo mo
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-**Categories** – create, sort and delete the labels you group spending by.
+**Categories** – create, sort and delete the labels you group spending by, each default with its own icon.
 
 ![Categories](docs/screenshots/categories.png)
 
@@ -34,7 +34,7 @@ Then open <http://localhost:5181>. The compose file also runs the app in demo mo
 
 - **Dashboard** – spending for the current month, change versus last month, number of transactions, top category, budget progress and the five most recent expenses.
 - **Expenses** – add and delete expenses with a title, category, optional description, date, currency and amount.
-- **Categories** – create and delete your own categories (ten defaults are added on first run). Names are unique ignoring case. Deleting a category never changes existing expenses.
+- **Categories** – create and delete your own categories (ten defaults are added on first run). Each default has its own icon and is shown in the language you picked; your own categories are shown as typed. Names are unique ignoring case. Deleting a category never changes existing expenses.
 - **Monthly budget** – set a budget from the dashboard; it is stored in the currency you chose.
 - **Multiple currencies** – SEK, EUR, GBP, JPY, USD and TWD. Totals on the dashboard are converted into your display currency using daily rates from [open.er-api.com](https://www.exchangerate-api.com) (no API key needed). Rates are cached for 6 hours, and the last good copy is used if the provider is unreachable.
 - **Languages** – English, Svenska, 日本語 and 繁體中文（台灣）. The browser language is detected on first visit; change it any time in **Settings**.
@@ -146,6 +146,7 @@ src/
   App.tsx           Page switching
   pages/            Dashboard, Expenses, Categories, Settings, Placeholder
   components/       Layout (sidebar, header) and shared UI components
+  config/           Navigation items and the icon for each default category
   i18n/             Language/currency preferences and message files (en, sv, ja, zh-TW)
   lib/api.ts        Typed fetch helper and useApi hook
   lib/sandbox.ts    Demo-mode sandbox id (kept in localStorage, sent with every request)
