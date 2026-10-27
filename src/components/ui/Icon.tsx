@@ -14,6 +14,16 @@ export type IconName =
   | 'user'
   | 'sun'
   | 'moon'
+  | 'housing'
+  | 'groceries'
+  | 'dining'
+  | 'transport'
+  | 'utilities'
+  | 'healthcare'
+  | 'entertainment'
+  | 'shopping'
+  | 'subscriptions'
+  | 'other'
 
 const paths: Record<IconName, ReactNode> = {
   dashboard: (
@@ -76,6 +86,54 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21a8 8 0 0 1 16 0" />
+    </>
+  ),
+  housing: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
+  groceries: (
+    <>
+      <circle cx="9" cy="20" r="1" />
+      <circle cx="18" cy="20" r="1" />
+      <path d="M2 3h3l2.7 11.4a2 2 0 0 0 2 1.6h8a2 2 0 0 0 2-1.5L21 7H6" />
+    </>
+  ),
+  dining: <path d="M7 2v8a2 2 0 0 0 4 0V2M9 2v20M17 22V2c-2.5 1.5-4 4-4 7s1.5 4 4 4" />,
+  transport: (
+    <>
+      <path d="M5 17H3v-5l2.1-5.1A2 2 0 0 1 7 5.6h10a2 2 0 0 1 1.9 1.3L21 12v5h-2M9 17h6M3 12h18" />
+      <circle cx="7" cy="17" r="2" />
+      <circle cx="17" cy="17" r="2" />
+    </>
+  ),
+  utilities: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
+  healthcare: (
+    <>
+      <path d="M12 20.5 4.2 12.8a5 5 0 0 1 7.1-7.1l.7.7.7-.7a5 5 0 0 1 7.1 7.1z" />
+      <path d="M6.5 12.5h3l1.5-2.5 2.5 5 1.5-2.5h2.5" />
+    </>
+  ),
+  entertainment: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M7 3v18M17 3v18M3 8h4M3 12h18M3 16h4M17 8h4M17 16h4" />
+    </>
+  ),
+  shopping: (
+    <>
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
+    </>
+  ),
+  subscriptions: (
+    <>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+    </>
+  ),
+  other: (
+    <>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
     </>
   ),
 }

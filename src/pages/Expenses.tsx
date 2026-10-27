@@ -3,6 +3,7 @@ import { Button, IconButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
+import { categoryIcon } from '../config/categoryIcons.ts'
 import { CURRENCIES, amountStepFor, isCurrency } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, useApi, type Category, type Expense, type NewExpense } from '../lib/api.ts'
@@ -181,7 +182,8 @@ export function Expenses() {
               >
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate font-medium text-strong">{e.title}</span>
-                  <span className="text-[13px] text-muted">
+                  <span className="flex items-center gap-1 text-[13px] text-muted">
+                    <Icon name={categoryIcon(e.category)} size={13} className="shrink-0" />
                     {categoryName(e.category)} · {formatDate(e.date)}
                   </span>
                   {e.description && (

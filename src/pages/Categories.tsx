@@ -4,6 +4,7 @@ import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
+import { categoryIcon } from '../config/categoryIcons.ts'
 import type { MessageKey } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, useApi, type Category } from '../lib/api.ts'
@@ -134,11 +135,16 @@ export function Categories() {
                 key={c.id}
                 className="flex items-center justify-between gap-3 border-t border-line py-3"
               >
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate font-medium text-strong">{categoryName(c.name)}</span>
-                  <span className="text-[13px] text-muted">
-                    {t('categories.expenses', { count: c.count })}
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-text">
+                    <Icon name={categoryIcon(c.name)} size={20} />
                   </span>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate font-medium text-strong">{categoryName(c.name)}</span>
+                    <span className="text-[13px] text-muted">
+                      {t('categories.expenses', { count: c.count })}
+                    </span>
+                  </div>
                 </div>
                 <IconButton onClick={() => setPendingDelete(c)} aria-label={t('categories.deleteLabel', { name: categoryName(c.name) })}>
                   <Icon name="close" size={18} />
