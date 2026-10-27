@@ -84,6 +84,17 @@ export const sv: Messages = {
   'categories.confirmUsed_other': '{count} befintliga utgifter behåller den här etiketten.',
   'categories.confirmUnused': 'Inga utgifter använder den.',
 
+  'category.Housing': 'Boende',
+  'category.Groceries': 'Matvaror',
+  'category.Dining': 'Restaurang',
+  'category.Transport': 'Transport',
+  'category.Utilities': 'Hushållsräkningar',
+  'category.Healthcare': 'Hälsa och sjukvård',
+  'category.Entertainment': 'Nöje',
+  'category.Shopping': 'Shopping',
+  'category.Subscriptions': 'Prenumerationer',
+  'category.Other': 'Övrigt',
+
   'settings.title': 'Inställningar',
   'settings.subtitle': 'Välj vilket språk och vilken valuta som används i appen.',
   'settings.language': 'Språk',

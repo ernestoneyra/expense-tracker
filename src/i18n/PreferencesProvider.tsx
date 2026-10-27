@@ -102,6 +102,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       // Dates are calendar days stored at UTC midnight, so format in UTC to avoid off-by-one shifts.
       formatDate: (iso) =>
         new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+      // Categories are stored (and referenced by expenses) under their English default name.
+      categoryName: (name) => dictionary[`category.${name}`] ?? name,
       currencyName: (c) => currencyNames.of(c) ?? c,
     }
   }, [language, currency, rates, setLanguage, setCurrency])

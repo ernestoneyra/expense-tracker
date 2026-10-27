@@ -29,6 +29,8 @@ export interface Preferences {
   ratesReady: boolean
   /** Format a calendar day stored as UTC midnight. */
   formatDate: (iso: string) => string
+  /** Display name of a stored category: the seeded defaults are translated, custom ones are returned as typed. */
+  categoryName: (name: string) => string
   /** Localised currency name, e.g. "Japanese Yen". */
   currencyName: (currency: Currency) => string
 }

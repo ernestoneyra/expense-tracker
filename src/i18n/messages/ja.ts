@@ -86,6 +86,17 @@ export const ja: Messages = {
   'categories.confirmUsed_other': '既存の支出 {count} 件にはこのラベルが残ります。',
   'categories.confirmUnused': 'このカテゴリを使用している支出はありません。',
 
+  'category.Housing': '住居',
+  'category.Groceries': '食料品',
+  'category.Dining': '外食',
+  'category.Transport': '交通',
+  'category.Utilities': '水道光熱費',
+  'category.Healthcare': '医療',
+  'category.Entertainment': '娯楽',
+  'category.Shopping': 'ショッピング',
+  'category.Subscriptions': 'サブスクリプション',
+  'category.Other': 'その他',
+
   'settings.title': '設定',
   'settings.subtitle': 'アプリ全体で使用する言語と通貨を選択します。',
   'settings.language': '言語',

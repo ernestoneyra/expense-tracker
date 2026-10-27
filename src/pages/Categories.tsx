@@ -10,10 +10,14 @@ import { api, useApi, type Category } from '../lib/api.ts'
 
 type SortKey = 'name' | 'frequency'
 
-const sorters: Record<SortKey, (a: Category, b: Category) => number> = {
-  name: (a, b) => a.name.localeCompare(b.name),
+// `byName` compares the displayed (translated) names, so the order follows the active language.
+const sorters: Record<
+  SortKey,
+  (byName: (a: Category, b: Category) => number) => (a: Category, b: Category) => number
+> = {
+  name: (byName) => byName,
   // Most-used first; ties fall back to alphabetical so the order is stable.
-  frequency: (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+  frequency: (byName) => (a, b) => b.count - a.count || byName(a, b),
 }
 
 const sortOptions: { key: SortKey; labelKey: MessageKey }[] = [
@@ -22,7 +26,7 @@ const sortOptions: { key: SortKey; labelKey: MessageKey }[] = [
 ]
 
 export function Categories() {
-  const { t } = usePreferences()
+  const { t, locale, categoryName } = usePreferences()
   const { data: categories, error, loading, reload } = useApi<Category[]>('/categories')
   const [name, setName] = useState('')
   const [sort, setSort] = useState<SortKey>('name')
@@ -56,7 +60,9 @@ export function Categories() {
     }
   }
 
-  const sorted = categories && [...categories].sort(sorters[sort])
+  const byName = (a: Category, b: Category) =>
+    categoryName(a.name).localeCompare(categoryName(b.name), locale)
+  const sorted = categories && [...categories].sort(sorters[sort](byName))
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
@@ -129,12 +135,12 @@ export function Categories() {
                 className="flex items-center justify-between gap-3 border-t border-line py-3"
               >
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate font-medium text-strong">{c.name}</span>
+                  <span className="truncate font-medium text-strong">{categoryName(c.name)}</span>
                   <span className="text-[13px] text-muted">
                     {t('categories.expenses', { count: c.count })}
                   </span>
                 </div>
-                <IconButton onClick={() => setPendingDelete(c)} aria-label={t('categories.deleteLabel', { name: c.name })}>
+                <IconButton onClick={() => setPendingDelete(c)} aria-label={t('categories.deleteLabel', { name: categoryName(c.name) })}>
                   <Icon name="close" size={18} />
                 </IconButton>
               </li>
@@ -145,7 +151,7 @@ export function Categories() {
 
       {pendingDelete && (
         <ConfirmToast
-          title={t('categories.confirmTitle', { name: pendingDelete.name })}
+          title={t('categories.confirmTitle', { name: categoryName(pendingDelete.name) })}
           confirmLabel={t('common.delete')}
           onConfirm={() => remove(pendingDelete)}
           onCancel={() => setPendingDelete(undefined)}
