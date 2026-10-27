@@ -111,7 +111,7 @@ export function Expenses() {
           </label>
           <label className="flex flex-col gap-1 text-sm text-muted">
             {t('expenses.amount')}
-            <div className="flex gap-2">
+            <div className="grid grid-cols-[65fr_35fr] gap-2">
               <input
                 required
                 type="number"
@@ -127,7 +127,7 @@ export function Expenses() {
                 value={expenseCurrency}
                 onChange={(e) => isCurrency(e.target.value) && setExpenseCurrency(e.target.value)}
                 aria-label={t('expenses.currency')}
-                className={`${inputClass} w-auto shrink-0`}
+                className={`${inputClass} min-w-0`}
               >
                 {CURRENCIES.map((c) => (
                   <option key={c} value={c}>
