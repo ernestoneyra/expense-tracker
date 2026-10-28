@@ -5,6 +5,33 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-10-28
+
+### Added
+
+- **Accessibility to WCAG 2.2 level AAA** wherever an app can reach it; see [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) for each criterion and what has not been tested.
+  - Text contrast of at least 7:1 in both themes, 3:1 for field borders, the focus ring and progress bars, and a thick focus ring that is never hidden behind the header or a dialog.
+  - Every button, link and field is at least 44 × 44 px. The chosen option in a group (range, sort, budgeting method, payoff plan) and the current page are shown with a border and bold text as well as a tint.
+  - A skip link, a page title that says where you are, the page in the URL (`#/expenses`) so the Back button works, and focus that moves to the page after you navigate. The menu is now made of links.
+  - A **Help** page with a glossary of the financial words (budgeting methods, sinking fund, APR, avalanche and snowball, CSV and JSON…) in all four languages, and a link to it from the pages that use them.
+  - Short help text under each form field, read out with the field.
+  - A polite announcement ("Saved.", "Deleted.") after a change, loading and error messages that are announced, and a heading on every page even while it loads.
+  - Confirmation before deleting an expense, an income entry, a recurring item or a category limit, as for everything else that cannot be undone. The confirmation is now a real modal dialog: focus stays inside it, Escape cancels, and focus returns to the button you used.
+  - Smooth motion is turned off when the system asks for reduced motion, and progress bars stay visible in Windows high-contrast mode.
+  - `npm run a11y`: checks colour tokens, runs axe-core's A, AA and AAA rules on every page in light, dark and phone width, and tests the keyboard behaviour. New dev dependencies: `axe-core` and `playwright-core`.
+
+### Changed
+
+- The colour palette is darker or lighter as needed to reach AAA contrast. Secondary text is now close to the main text colour; hierarchy comes from size and weight.
+- Small text (13 px) is now 14 px, line spacing is 1.5 throughout, and paragraphs are limited to 80 characters (40 for Japanese and Chinese).
+- Long titles and values wrap instead of being cut off with an ellipsis.
+- `Field` and `AmountField` link labels to inputs explicitly, and take a `hint`.
+
+### Fixed
+
+- The "Add expense" button in the header had no accessible name on narrow screens, where only its icon is shown.
+- Some progress bars had no name for screen readers.
+
 ## [0.7.0] - 2026-10-28
 
 ### Added
@@ -78,6 +105,7 @@ First tracked release of Expenser, a personal expense tracker.
 - `.env.example` and a README with screenshots, a feature list and setup instructions.
 - Placeholder pages for Budgets, Reports and Recurring expenses.
 
+[0.8.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.1...0.7.0
 [0.6.1]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.5.0...0.6.0
