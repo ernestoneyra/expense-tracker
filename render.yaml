@@ -16,6 +16,13 @@ services:
         value: production
       - key: DEMO_MODE
         value: true
+      # Render puts one proxy in front of the app: needed for the real visitor address and https.
+      - key: TRUST_PROXY
+        value: 1
+      # Your service's public address, e.g. https://expenser.onrender.com (shown on the service page).
+      # Only needed for Google / GitHub sign-in; add GOOGLE_* / GITHUB_* the same way to turn those on.
+      - key: APP_URL
+        sync: false
       - key: MONGODB_URI
         sync: false
       - key: MONGODB_DB

@@ -1,4 +1,5 @@
 import type { RequestHandler } from 'express'
+import { trusted } from 'mongoose'
 import { Expense } from './models/Expense.ts'
 import { Income } from './models/Income.ts'
 import { Recurring, type Frequency } from './models/Recurring.ts'
@@ -9,7 +10,7 @@ import { DEMO_MODE, MAX_EXPENSES, sandboxOf } from './sandbox.ts'
 const MAX_CATCH_UP = 400
 
 /** The next time something due on `date` falls due, as UTC midnight. */
-export function advance(date: Date, frequency: Frequency, anchorDay: number) {
+function advance(date: Date, frequency: Frequency, anchorDay: number) {
   const y = date.getUTCFullYear()
   const m = date.getUTCMonth()
   if (frequency === 'weekly') return new Date(Date.UTC(y, m, date.getUTCDate() + 7))
@@ -29,9 +30,9 @@ export const monthlyFactor: Record<Frequency, number> = { weekly: 52 / 12, month
  * occurrence is claimed by moving `nextDue` only if it is still unchanged, so two requests racing
  * on the same item cannot both create the entry.
  */
-export async function processRecurring(sandbox: string | null, now = new Date()) {
+async function processRecurring(sandbox: string | null, now = new Date()) {
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
-  const items = await Recurring.find({ sandbox, active: true, nextDue: { $lte: today } })
+  const items = await Recurring.find({ sandbox, active: true, nextDue: trusted({ $lte: today }) })
   if (items.length === 0) return
 
   let expenseCount = DEMO_MODE ? await Expense.countDocuments({ sandbox }) : 0

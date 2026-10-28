@@ -42,7 +42,9 @@ export async function sumConverted(model: Aggregatable, match: object, convert: 
 }
 
 /** Like sumConverted, but split by the value of one field (e.g. the category). */
-export async function sumConvertedBy(model: Aggregatable, match: object, field: string, convert: Convert) {
+// `field` is written into the pipeline as `$field`, so it is typed as the one name used, never a string
+// that could have come from a request.
+export async function sumConvertedBy(model: Aggregatable, match: object, field: 'category', convert: Convert) {
   const rows = await model.aggregate<{ _id: { key: string; currency: Currency }; total: number }>([
     { $match: match },
     { $group: { _id: { key: `$${field}`, currency: currencyOf }, total: { $sum: '$amountCents' } } },

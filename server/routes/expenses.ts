@@ -14,6 +14,11 @@ expensesRouter.get('/', async (req, res) => {
 expensesRouter.post('/', async (req, res) => {
   const sandbox = sandboxOf(res)
   const { title, category, description, currency, date, amountCents } = req.body ?? {}
+  // Anything but text (or nothing) is a mistake, not "no description"; don't quietly drop it.
+  if (description !== undefined && description !== null && typeof description !== 'string') {
+    res.status(400).json({ error: 'The description must be text' })
+    return
+  }
   // Look the name up ignoring case and store the canonical spelling.
   const match =
     typeof category === 'string' && category.trim()

@@ -5,7 +5,7 @@ import { CURRENCIES, DEFAULT_CURRENCY } from '../rates.ts'
  * A `savings` goal has a fixed target amount. An `emergency` fund has no stored amount: its
  * target is `targetMonths` of the user's own average monthly spending, worked out when it is read.
  */
-export const GOAL_KINDS = ['savings', 'emergency'] as const
+const GOAL_KINDS = ['savings', 'emergency'] as const
 
 const integer = { validator: Number.isInteger, message: 'must be a whole number' }
 

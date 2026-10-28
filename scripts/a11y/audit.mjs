@@ -24,7 +24,9 @@ async function customChecks(page, where) {
     for (const el of document.querySelectorAll('a[href], button, select, textarea, input:not([type=hidden]), summary')) {
       if (!visible(el) || el.closest('.sr-only')) continue
       if (el.matches('a.fixed') && !el.matches(':focus')) continue // skip link, off screen until focused
-      const r = el.getBoundingClientRect()
+      // A checkbox is switched by its whole label, so that is the target a finger has to hit.
+      const target = el.matches('input[type=checkbox], input[type=radio]') ? (el.closest('label') ?? el) : el
+      const r = target.getBoundingClientRect()
       if (r.width < 43.5 || r.height < 43.5) out.small.push(`${label(el)} ${Math.round(r.width)}x${Math.round(r.height)}`)
     }
     for (const el of document.querySelectorAll('body *')) {
@@ -75,7 +77,42 @@ for (const [scheme, viewport] of [
     await axeRun(page, where)
     await customChecks(page, where)
   }
+  // The account menu is open on the last page, so it is audited as well.
+  const where = `account menu [${scheme} ${viewport.width}px]`
+  await page.getByRole('button', { name: /^Account/ }).click()
+  await axeRun(page, where)
+  await customChecks(page, where)
   if (errors.length) note(`console [${scheme} ${viewport.width}px]`, 'console-errors', [...new Set(errors)].slice(0, 5))
+  await ctx.close()
+}
+
+// What someone sees before signing in: the sign-in page, and the registration form.
+for (const [scheme, viewport] of [
+  ['light', { width: 1280, height: 900 }],
+  ['dark', { width: 1280, height: 900 }],
+  ['light', { width: 375, height: 800 }],
+]) {
+  const ctx = await browser.newContext({ viewport, colorScheme: scheme, locale: 'en-US', signedOut: true })
+  const page = await ctx.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
+  await page.goto(BASE)
+  await page.getByRole('heading', { name: 'Sign in' }).waitFor()
+  await axeRun(page, `sign in [${scheme} ${viewport.width}px]`)
+  await customChecks(page, `sign in [${scheme} ${viewport.width}px]`)
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await page.getByRole('heading', { name: 'Create your account' }).waitFor()
+  await axeRun(page, `register [${scheme} ${viewport.width}px]`)
+  await customChecks(page, `register [${scheme} ${viewport.width}px]`)
+  // A sign-in that fails shows its message in red; check that colour too.
+  await page.getByLabel('Username').fill('ab')
+  await page.getByLabel('Password', { exact: true }).fill('short')
+  await page.getByLabel('Confirm password').fill('different')
+  await page.getByRole('button', { name: 'Create account' }).last().click()
+  await page.getByRole('alert').waitFor()
+  await axeRun(page, `register with an error [${scheme} ${viewport.width}px]`)
+  if (errors.length) note(`console [sign in ${scheme} ${viewport.width}px]`, 'console-errors', [...new Set(errors)].slice(0, 5))
   await ctx.close()
 }
 await browser.close()
@@ -91,5 +128,5 @@ for (const g of grouped.values()) {
   for (const d of [].concat(g.detail)) console.log('    ' + d)
 }
 const failing = [...grouped.values()].filter((g) => !g.kind.startsWith('axe-review'))
-console.log(`\n${failing.length} failing findings (and ${grouped.size - failing.length} for manual review) across ${ROUTES.length * 3} page-views`)
+console.log(`\n${failing.length} failing findings (and ${grouped.size - failing.length} for manual review) across ${(ROUTES.length + 4) * 3} page-views`)
 if (failing.length) process.exitCode = 1

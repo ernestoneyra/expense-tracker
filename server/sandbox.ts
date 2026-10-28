@@ -1,5 +1,5 @@
 import type { RequestHandler, Response } from 'express'
-import { model, Schema } from 'mongoose'
+import { model, Schema, trusted } from 'mongoose'
 import { DEFAULT_CATEGORIES, DEMO_BUDGET, demoExpenses } from './demo.ts'
 import { Budget } from './models/Budget.ts'
 import { Category } from './models/Category.ts'
@@ -10,11 +10,11 @@ import { Goal } from './models/Goal.ts'
 import { Income } from './models/Income.ts'
 import { Recurring } from './models/Recurring.ts'
 
-// With DEMO_MODE=true every visitor gets a private copy of the data, keyed by a random id their
-// browser sends in the X-Sandbox-Id header. There are no accounts: the id is the only thing that
-// separates one visitor's data from another's, which is fine for a demo and not for real
-// financial data. Without it (local development) there is a single dataset: every query uses a
-// `null` sandbox, which also matches documents saved before sandboxes existed.
+// Every record belongs to a "sandbox": the string stored in its `sandbox` field, which every query
+// filters on. For a signed-in person it is `user:<id>` (see accountScope), so nobody can reach
+// anyone else's data. With DEMO_MODE=true, visitors who don't sign in can also get a private copy of
+// the demo data, keyed by a random id their browser sends in the X-Sandbox-Id header. That id is the
+// only thing separating them, which is fine for a demo and not for real financial data.
 export const DEMO_MODE = process.env.DEMO_MODE === 'true'
 
 /** Per-sandbox caps so a single visitor can't fill the database. */
@@ -41,7 +41,7 @@ const creating = new Map<string, Promise<void>>()
 
 /** Deletes everything stored for a sandbox (or several), or the single dataset outside demo mode (`null`). */
 export async function wipe(sandbox: string | string[] | null) {
-  const filter = Array.isArray(sandbox) ? { sandbox: { $in: sandbox } } : { sandbox }
+  const filter = Array.isArray(sandbox) ? { sandbox: trusted({ $in: sandbox }) } : { sandbox }
   await Promise.all([
     Expense.deleteMany(filter),
     Category.deleteMany(filter),
@@ -54,10 +54,22 @@ export async function wipe(sandbox: string | string[] | null) {
   ])
 }
 
+/** The sandbox of a signed-in person's data. Can't collide with an anonymous sandbox, whose id is a UUID. */
+export const accountScope = (userId: { toString(): string }) => `user:${userId}`
+
+const seedCategories = (sandbox: string) =>
+  Category.insertMany(DEFAULT_CATEGORIES.map((name) => ({ sandbox, name })))
+
 async function populate(sandbox: string) {
-  await Category.insertMany(DEFAULT_CATEGORIES.map((name) => ({ sandbox, name })))
+  await seedCategories(sandbox)
   await Expense.insertMany(demoExpenses(new Date()).map((expense) => ({ sandbox, ...expense })))
   await Budget.create({ sandbox, ...DEMO_BUDGET })
+}
+
+/** Gives a new account its starting data: the default categories, plus sample expenses for the demo accounts. */
+export async function provisionAccount(sandbox: string, withSampleData: boolean) {
+  await wipe(sandbox)
+  await (withSampleData ? populate(sandbox) : seedCategories(sandbox))
 }
 
 async function ensureSandbox(id: string) {
@@ -97,19 +109,20 @@ export const sandboxMiddleware: RequestHandler = async (req, res, next) => {
   next()
 }
 
-/** The sandbox id of the current request, or `null` for the single shared dataset outside demo mode. */
-export const sandboxOf = (res: Response): string | null => res.locals.sandbox ?? null
-
-/** Outside demo mode, an empty database gets the default categories on startup. */
-export async function seedLocalCategories() {
-  if (await Category.exists({ sandbox: null })) return
-  await Category.insertMany(DEFAULT_CATEGORIES.map((name) => ({ sandbox: null, name })))
+/**
+ * The sandbox of the current request. It is set by requireScope, which every data route sits behind;
+ * if that were ever missing this throws instead of falling back to a dataset that isn't theirs.
+ */
+export function sandboxOf(res: Response): string {
+  const sandbox: unknown = res.locals.sandbox
+  if (typeof sandbox !== 'string' || !sandbox) throw new Error('Request has no data scope')
+  return sandbox
 }
 
-/** Deletes all the data of a sandbox (`null`: the single dataset) and leaves only the default categories. */
-export async function clearData(sandbox: string | null) {
+/** Deletes all the data of a sandbox and leaves only the default categories. */
+export async function clearData(sandbox: string) {
   await wipe(sandbox)
-  await Category.insertMany(DEFAULT_CATEGORIES.map((name) => ({ sandbox, name })))
+  await seedCategories(sandbox)
 }
 
 /** Throws away this sandbox's data and starts it over with the demo data. */
@@ -120,11 +133,11 @@ export async function resetSandbox(id: string) {
 
 async function deleteStaleSandboxes() {
   const cutoff = new Date(Date.now() - RETENTION_MS)
-  const stale = (await Sandbox.distinct('_id', { lastSeenAt: { $lt: cutoff } })) as string[]
+  const stale = (await Sandbox.distinct('_id', { lastSeenAt: trusted({ $lt: cutoff }) })) as string[]
   if (stale.length === 0) return
   // Data first: a crash in between leaves an empty sandbox rather than data nobody can reach.
   await wipe(stale)
-  await Sandbox.deleteMany({ _id: { $in: stale } })
+  await Sandbox.deleteMany({ _id: trusted({ $in: stale }) })
   for (const id of stale) lastTouched.delete(id)
   console.log(`Deleted ${stale.length} inactive sandbox(es)`)
 }

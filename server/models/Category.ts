@@ -4,9 +4,9 @@ import { model, Schema } from 'mongoose'
 export const NAME_COLLATION = { locale: 'en', strength: 2 } as const
 
 /** Whether a category's cost is the same every month (rent) or varies (groceries). */
-export const COST_TYPES = ['fixed', 'variable'] as const
+const COST_TYPES = ['fixed', 'variable'] as const
 /** Needs vs wants, for the 50/30/20 split. */
-export const NECESSITIES = ['need', 'want'] as const
+const NECESSITIES = ['need', 'want'] as const
 
 const categorySchema = new Schema(
   {

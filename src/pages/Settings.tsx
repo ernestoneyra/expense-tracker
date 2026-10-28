@@ -1,4 +1,5 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useAuth } from '../auth/AuthContext.ts'
 import { Button, DangerButton, SecondaryButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
@@ -8,6 +9,7 @@ import { useTheme, type ThemePreference } from '../hooks/useTheme.ts'
 import { CURRENCIES, LANGUAGES, isCurrency, isLanguage, type MessageKey } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, download, useApi } from '../lib/api.ts'
+import { AccountCard } from './settings/AccountCard.tsx'
 
 const THEMES: { value: ThemePreference; label: MessageKey }[] = [
   { value: 'system', label: 'settings.themeSystem' },
@@ -45,6 +47,7 @@ export function Settings() {
     refreshRates,
   } = usePreferences()
   const { preference: themePreference, setPreference: setThemePreference } = useTheme()
+  const { user } = useAuth()
   // Only a hosted demo has sandboxes to reset; with your own data the card (and the route) don't exist.
   const { data: health } = useApi<{ demo: boolean }>('/health')
 
@@ -139,6 +142,18 @@ export function Settings() {
     setConfirming(undefined)
     setBackup(undefined)
   }
+
+  // #/settings/account opens the page already scrolled down to the account card. Deferred a tick so it
+  // lands after the layout moves focus to the page content, which would otherwise scroll back up.
+  useEffect(() => {
+    const toAccount = () => {
+      if (!/^#\/?settings\/account\/?$/.test(location.hash)) return
+      window.setTimeout(() => document.getElementById('account')?.scrollIntoView(), 0)
+    }
+    toAccount()
+    window.addEventListener('hashchange', toAccount)
+    return () => window.removeEventListener('hashchange', toAccount)
+  }, [])
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
@@ -282,11 +297,13 @@ export function Settings() {
           <h2 id="demo-title" className="font-semibold text-strong">
             {t('settings.demoTitle')}
           </h2>
-          <p className="text-sm text-muted">{t('settings.demoNote')}</p>
+          <p className="text-sm text-muted">{t(user ? 'settings.demoAccountNote' : 'settings.demoNote')}</p>
           <Button onClick={() => setConfirming('reset')}>{t('settings.resetDemo')}</Button>
           <StatusLine status={resetStatus} />
         </Card>
       )}
+
+      <AccountCard />
 
       {confirming === 'reset' && (
         <ConfirmToast

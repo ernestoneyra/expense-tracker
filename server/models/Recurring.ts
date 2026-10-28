@@ -1,10 +1,10 @@
 import { model, Schema } from 'mongoose'
 import { CURRENCIES, DEFAULT_CURRENCY } from '../rates.ts'
 
-export const FREQUENCIES = ['weekly', 'monthly', 'yearly'] as const
+const FREQUENCIES = ['weekly', 'monthly', 'yearly'] as const
 export type Frequency = (typeof FREQUENCIES)[number]
 
-export const RECURRING_KINDS = ['expense', 'income'] as const
+const RECURRING_KINDS = ['expense', 'income'] as const
 
 // A bill, subscription or paycheck that repeats. When `nextDue` arrives the server turns it into a
 // real expense or income entry and moves `nextDue` forward (see recurring.ts).

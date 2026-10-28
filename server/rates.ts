@@ -86,7 +86,7 @@ async function load(force: boolean): Promise<Rates> {
 /** Current rates, refreshed at most every few hours. Falls back to the last good copy if the provider is down. */
 export const getRates = () => load(false)
 
-export interface RatesStatus extends Rates {
+interface RatesStatus extends Rates {
   /** When this server last fetched the rates from the provider (ISO). */
   fetchedAt: string
   /** The latest attempt to reach the provider failed, so these are an older saved copy. */

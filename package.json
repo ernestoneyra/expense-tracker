@@ -1,7 +1,7 @@
 {
   "name": "expense-report",
   "private": true,
-  "version": "0.8.0",
+  "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -12,14 +12,17 @@
     "server": "node --use-system-ca --watch --env-file=.env server/index.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "node --test \"server/**/*.test.ts\"",
+    "claim-data": "node --env-file=.env server/claimLegacyData.ts",
     "preview": "vite preview",
     "start": "node --env-file-if-exists=.env server/index.ts",
-    "a11y": "node scripts/a11y/contrast.mjs && node scripts/a11y/audit.mjs && node scripts/a11y/behaviour.mjs"
+    "security": "node scripts/security/nosql-probe.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
+    "a11y":"node scripts/a11y/contrast.mjs && node scripts/a11y/audit.mjs && node scripts/a11y/behaviour.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "express": "^5.3.0",
-    "mobx": "^7.1.1",
     "mongoose": "^9.11.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

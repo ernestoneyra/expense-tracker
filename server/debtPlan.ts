@@ -1,7 +1,7 @@
 export const STRATEGIES = ['avalanche', 'snowball'] as const
 export type Strategy = (typeof STRATEGIES)[number]
 
-export interface PlanDebt {
+interface PlanDebt {
   id: string
   name: string
   balanceCents: number

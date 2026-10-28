@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Currency } from '../i18n/config.ts'
+import { accessToken, refresh } from '../auth/tokens.ts'
 import { getSandboxId } from './sandbox.ts'
 
 export interface Expense {
@@ -70,7 +71,7 @@ export interface Summary {
 
 export type BudgetMethod = 'envelope' | 'split' | 'zeroBased' | 'payFirst'
 
-export interface BudgetSettings {
+interface BudgetSettings {
   monthlyCents: number
   method: BudgetMethod
   needsPercent: number | null
@@ -202,14 +203,43 @@ export interface Report {
   budgetCents: number
 }
 
-async function request(path: string, init?: RequestInit): Promise<Response> {
+/** A failed request. `code` is the server's machine-readable reason (e.g. `username_taken`), when it gave one. */
+export class ApiError extends Error {
+  readonly status: number
+  readonly code?: string
+
+  constructor(message: string, status: number, code?: string) {
+    super(message)
+    this.status = status
+    this.code = code
+  }
+}
+
+/** Fired when the server says nobody is signed in, e.g. because the session expired. */
+export const UNAUTHORIZED_EVENT = 'expenser:unauthorized'
+
+async function send(path: string, init?: RequestInit) {
   const headers = new Headers(init?.headers)
+  // Only used by the hosted demo's anonymous sandboxes; the server ignores it for signed-in people.
   headers.set('x-sandbox-id', getSandboxId())
   if (init?.body) headers.set('content-type', 'application/json')
-  const res = await fetch(`/api${path}`, { ...init, headers })
+  // The access token, renewed first if it is about to run out. (Nothing is sent when signed out.)
+  const token = await accessToken()
+  if (token) headers.set('authorization', `Bearer ${token}`)
+  return { res: await fetch(`/api${path}`, { ...init, headers }), token }
+}
+
+async function request(path: string, init?: RequestInit): Promise<Response> {
+  const first = await send(path, init)
+  let res = first.res
+  // Rejected although it looked fine to us: it was revoked, or the clock is off. Renew once and retry.
+  if (res.status === 401 && first.token && (await res.clone().json().catch(() => null))?.code === 'invalid_token' && (await refresh())) {
+    res = (await send(path, init)).res
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new Error(body?.error ?? `Request failed (${res.status})`)
+    if (body?.code === 'unauthorized' || body?.code === 'invalid_token') window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+    throw new ApiError(body?.error ?? `Request failed (${res.status})`, res.status, body?.code)
   }
   return res
 }
@@ -220,8 +250,8 @@ export const SAVED_EVENT = 'expenser:saved'
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await request(path, init)
   const method = (init?.method ?? 'GET').toUpperCase()
-  // Reading data, and refreshing exchange rates, are not changes the person made to their data.
-  if (method !== 'GET' && !path.startsWith('/rates')) {
+  // Reading data, refreshing exchange rates and signing in or out are not changes the person made to their data.
+  if (method !== 'GET' && !path.startsWith('/rates') && !path.startsWith('/auth')) {
     window.dispatchEvent(new CustomEvent(SAVED_EVENT, { detail: { method } }))
   }
   return res.status === 204 ? (undefined as T) : res.json()
