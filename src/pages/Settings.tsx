@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useAuth } from '../auth/AuthContext.ts'
 import { Button, DangerButton, SecondaryButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
@@ -142,6 +142,18 @@ export function Settings() {
     setConfirming(undefined)
     setBackup(undefined)
   }
+
+  // #/settings/account opens the page already scrolled down to the account card. Deferred a tick so it
+  // lands after the layout moves focus to the page content, which would otherwise scroll back up.
+  useEffect(() => {
+    const toAccount = () => {
+      if (!/^#\/?settings\/account\/?$/.test(location.hash)) return
+      window.setTimeout(() => document.getElementById('account')?.scrollIntoView(), 0)
+    }
+    toAccount()
+    window.addEventListener('hashchange', toAccount)
+    return () => window.removeEventListener('hashchange', toAccount)
+  }, [])
 
   return (
     <div className="flex max-w-275 flex-col gap-6">

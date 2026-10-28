@@ -89,7 +89,7 @@ export function AccountCard() {
   const providers = user.providers.map((p) => PROVIDER_NAMES[p] ?? p).join(', ')
 
   return (
-    <Card className="flex flex-col items-start gap-4 p-4 nav:p-5" aria-labelledby="account-title">
+    <Card id="account" className="flex scroll-mt-(--header-h) flex-col items-start gap-4 p-4 nav:p-5" aria-labelledby="account-title">
       <div className="flex flex-col gap-1">
         <h2 id="account-title" className="font-semibold text-strong">
           {t('account.title')}

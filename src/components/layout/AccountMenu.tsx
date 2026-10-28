@@ -60,7 +60,7 @@ export function AccountMenu() {
           </p>
           {user && (
             <a
-              href="#/settings"
+              href="#/settings/account"
               onClick={() => setOpen(false)}
               className="flex min-h-11 items-center font-semibold text-accent-text underline underline-offset-2"
             >
