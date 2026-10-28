@@ -18,15 +18,27 @@ Then open <http://localhost:5181>. The compose file also runs the app in demo mo
 
 ## Screenshots
 
-**Dashboard** – this month's spending, budget left, top category and recent expenses.
+**Dashboard** – this month's spending, budget left, top category, income, savings rate and recent expenses.
 
 ![Dashboard](docs/screenshots/dashboard.png)
+
+**Budgets** – pick a budgeting method (category limits, percentage split, zero-based or pay yourself first) and see how spending compares with the pace of the month.
+
+![Budgets](docs/screenshots/budgets.png)
+
+**Reports** – income, spending, net and savings rate month by month.
+
+![Reports](docs/screenshots/reports.png)
 
 **Categories** – create, sort and delete the labels you group spending by, each default with its own icon.
 
 ![Categories](docs/screenshots/categories.png)
 
-**Settings (dark theme)** – choose the language and display currency.
+**Help and glossary** – plain explanations of the financial words used in the app.
+
+![Help and glossary](docs/screenshots/help.png)
+
+**Settings (dark theme)** – choose the language, theme and display currency.
 
 ![Settings in dark theme](docs/screenshots/settings-dark.png)
 
