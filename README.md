@@ -45,6 +45,7 @@ Then open <http://localhost:5181>. The compose file also runs the app in demo mo
 - **Reports** – income, spending, net and savings rate for the last 3, 6 or 12 months, month by month and by category, compared with the month before.
 - **Multiple currencies** – SEK, EUR, GBP, JPY, USD and TWD. Totals on the dashboard are converted into your display currency using daily rates from [open.er-api.com](https://www.exchangerate-api.com) (no API key needed). Rates are cached for 6 hours, and the last good copy is used if the provider is unreachable.
 - **Languages** – English, Svenska, 日本語 and 繁體中文（台灣）. The browser language is detected on first visit; change it any time in **Settings**.
+- **Accessibility** – built to WCAG 2.2 level AAA wherever an app can: 7:1 text contrast, 44 px targets, a skip link, a visible focus ring, keyboard use everywhere, help text on the main form fields, confirmation before anything is deleted, a help and glossary page, and support for reduced motion, high contrast and 400 % zoom. See [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) for the criterion-by-criterion status and what has not been tested.
 - **Light, dark or match-system theme**, remembered between visits. Choose it in **Settings**.
 - **Default entry currency** – in **Settings**, choose the currency new expenses, income, recurring items, goals and debts start in (it follows the display currency until you pick one). You can still change it on each form.
 - **Backup and restore** – in **Settings**, download everything as a JSON backup, or just the expenses or income as CSV for a spreadsheet. A backup can be restored later, which replaces the current data; a file is fully checked first, so a bad one changes nothing. **Delete all my data** empties the app and leaves the default categories.
@@ -140,6 +141,19 @@ In demo mode there are no accounts. The browser creates a random id, keeps it in
 | `npm run preview` | Serves the production build locally (the API server must also run). |
 | `npm start`       | Runs the API server, which also serves `dist/` if it has been built.  |
 | `npm run lint`    | Runs ESLint.                                                         |
+| `npm run a11y`    | Checks accessibility (colour contrast, axe-core WCAG rules, keyboard behaviour) against a running app; see [Accessibility checks](#accessibility-checks). |
+
+## Accessibility checks
+
+`npm run a11y` checks the colour tokens against AAA contrast, then opens every page in Chrome (light, dark and phone width) with [axe-core](https://github.com/dequelabs/axe-core), and finally tries the keyboard behaviour: skip link, focus after navigating, the confirm dialog, announcements and reflow. It needs Chrome installed (or `CHROME_PATH` pointing at a browser) and the app running with demo data:
+
+```bash
+npm run build
+DEMO_MODE=true npm start     # on Windows PowerShell: $env:DEMO_MODE='true'; npm start
+npm run a11y                 # in another terminal; set BASE=http://localhost:PORT if the port is not 5181
+```
+
+It exits with an error if anything fails, so it can gate a change. Run it after touching colours, forms or layout.
 
 ## Project structure
 
@@ -158,13 +172,16 @@ server/
   routes/           API routes: expenses, income, categories, budget, summary, goals, debts, recurring, reports, rates, data, sandbox
 src/
   App.tsx           Page switching
-  pages/            Dashboard, Expenses, Income, Categories, Budgets (and budgets/ method panels), Recurring, Goals, Debts, Reports, Settings
+  pages/            Dashboard, Expenses, Income, Categories, Budgets (and budgets/ method panels), Recurring, Goals, Debts, Reports, Settings, Help
   components/       Layout (sidebar, header) and shared UI components
   config/           Navigation items and the icon for each default category
   i18n/             Language/currency preferences and message files (en, sv, ja, zh-TW)
   lib/api.ts        Typed fetch helper and useApi hook
   lib/sandbox.ts    Demo-mode sandbox id (kept in localStorage, sent with every request)
+  lib/route.ts      The current page, kept in the URL hash (#/expenses)
   hooks/            Theme hook
+scripts/a11y/       Accessibility checks (`npm run a11y`): contrast, axe-core audit, keyboard behaviour
+docs/               Screenshots and the accessibility statement
 ```
 
 ## API
