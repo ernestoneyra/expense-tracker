@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Button, IconButton } from '../components/ui/Button.tsx'
+import { Button, IconButton, SecondaryButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
 import { AmountField, Field, ProgressBar, cardTitleClass, emptyRowClass, inputClass } from '../components/ui/fields.tsx'
@@ -66,7 +66,7 @@ export function Goals() {
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
-      <PageHeader title={t('goals.title')} subtitle={t('goals.subtitle')} />
+      <PageHeader title={t('goals.title')} subtitle={t('goals.subtitle')} glossary />
 
       <Card className="p-4 nav:p-5" aria-labelledby="add-goal-title">
         <h2 id="add-goal-title" className={`pb-3 ${cardTitleClass}`}>
@@ -79,7 +79,7 @@ export function Goals() {
               <option value="emergency">{t('goals.emergency')}</option>
             </select>
           </Field>
-          <Field label={t('goals.name')}>
+          <Field label={t('goals.name')} hint={t('hint.goalName')}>
             <input
               required
               maxLength={80}
@@ -93,18 +93,19 @@ export function Goals() {
             <>
               <AmountField
                 label={t('goals.target')}
+                hint={t('hint.goalTarget')}
                 amount={target}
                 onAmount={setTarget}
                 currency={targetCurrency}
                 onCurrency={setTargetCurrency}
               />
-              <Field label={t('goals.deadline')}>
+              <Field label={t('goals.deadline')} hint={t('hint.deadline')}>
                 <input type="date" min={today()} value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputClass} />
               </Field>
             </>
           ) : (
             <>
-              <Field label={t('goals.months')}>
+              <Field label={t('goals.months')} hint={t('hint.months')}>
                 <input
                   required
                   type="number"
@@ -138,7 +139,7 @@ export function Goals() {
               {t('goals.add')}
             </Button>
             {formError && (
-              <p className="text-sm text-red-500" role="alert">
+              <p className="text-sm text-danger" role="alert">
                 {formError}
               </p>
             )}
@@ -148,7 +149,7 @@ export function Goals() {
       </Card>
 
       {loading ? (
-        <p className="text-muted">{t('common.loading')}</p>
+        <p className="text-muted" role="status">{t('common.loading')}</p>
       ) : error || !data ? (
         <p className="text-muted" role="alert">
           {t('goals.loadError', { error: error ?? '' })}
@@ -164,8 +165,8 @@ export function Goals() {
                 <Card className="flex h-full flex-col gap-3 p-4 nav:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 flex-col">
-                      <h2 className={`truncate ${cardTitleClass}`}>{goal.name}</h2>
-                      <span className="text-[13px] text-muted">
+                      <h2 className={`wrap-anywhere ${cardTitleClass}`}>{goal.name}</h2>
+                      <span className="text-sm text-muted">
                         {goal.kind === 'emergency'
                           ? t('goals.coversMonths', { count: goal.targetMonths ?? 0 })
                           : goal.deadline
@@ -202,7 +203,7 @@ export function Goals() {
                     </p>
                   )}
                   {goal.overdue && (
-                    <p className="text-sm text-red-500" role="alert">
+                    <p className="text-sm text-danger" role="alert">
                       {t('goals.overdue')}
                     </p>
                   )}
@@ -216,14 +217,14 @@ export function Goals() {
 
                   {goal.contributions.length > 0 && (
                     <details className="text-sm">
-                      <summary className="cursor-pointer text-muted hover:text-strong">
+                      <summary className="flex min-h-11 cursor-pointer items-center font-medium text-body hover:text-strong">
                         {t('goals.history', { count: goal.contributions.length })}
                       </summary>
                       <ul className="m-0 mt-2 list-none p-0">
                         {goal.contributions.slice(0, 20).map((c) => (
                           <li key={c.id} className="flex justify-between gap-3 border-t border-line py-1.5">
                             <span className="text-muted">{formatDate(c.date)}</span>
-                            <span className={`tabular-nums ${c.amountCents < 0 ? 'text-red-500' : 'text-strong'}`}>
+                            <span className={`tabular-nums ${c.amountCents < 0 ? 'text-danger' : 'text-strong'}`}>
                               {formatIn(c.amountCents, goal.currency)}
                             </span>
                           </li>
@@ -293,18 +294,14 @@ function ContributionForm({ goal, onDone }: { goal: Goal; onDone: () => void }) 
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" className="min-h-9 text-sm">
+        <Button type="submit" className="text-sm">
           {t('goals.deposit')}
         </Button>
-        <button
-          type="button"
-          onClick={() => void record(-1)}
-          className="min-h-9 cursor-pointer rounded-[10px] border border-line px-3 text-sm font-semibold text-body hover:bg-hover hover:text-strong"
-        >
+        <SecondaryButton onClick={() => void record(-1)} className="text-sm">
           {t('goals.withdraw')}
-        </button>
+        </SecondaryButton>
         {error && (
-          <p className="text-sm text-red-500" role="alert">
+          <p className="text-sm text-danger" role="alert">
             {error}
           </p>
         )}

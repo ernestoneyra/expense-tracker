@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChipButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ProgressBar, cardTitleClass, emptyRowClass } from '../components/ui/fields.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
@@ -19,27 +20,29 @@ export function Reports() {
   const rangePicker = (
     <div role="group" aria-label={t('reports.range')} className="flex gap-1">
       {RANGES.map((n) => (
-        <button
-          key={n}
-          type="button"
-          aria-pressed={months === n}
-          onClick={() => setMonths(n)}
-          className={`min-h-9 cursor-pointer rounded-[10px] px-3 text-sm font-medium ${
-            months === n ? 'bg-accent-soft text-accent-text' : 'text-body hover:bg-hover hover:text-strong'
-          }`}
-        >
+        <ChipButton key={n} pressed={months === n} onClick={() => setMonths(n)}>
           {t('reports.months', { count: n })}
-        </button>
+        </ChipButton>
       ))}
     </div>
   )
 
-  if (loading) return <p className="text-muted">{t('common.loading')}</p>
-  if (error || !data) {
+  // The heading is there while loading or after an error, so the page always has one.
+  if (loading || error || !data) {
     return (
-      <p className="text-muted" role="alert">
-        {t('reports.loadError', { error: error ?? t('dashboard.noData') })}
-      </p>
+      <div className="flex max-w-275 flex-col gap-6">
+        <PageHeader title={t('reports.title')} subtitle={t('reports.subtitle')} glossary />
+        {rangePicker}
+        {loading ? (
+          <p className="text-muted" role="status">
+            {t('common.loading')}
+          </p>
+        ) : (
+          <p className="text-muted" role="alert">
+            {t('reports.loadError', { error: error ?? t('dashboard.noData') })}
+          </p>
+        )}
+      </div>
     )
   }
 
@@ -61,17 +64,20 @@ export function Reports() {
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
-      <PageHeader title={t('reports.title')} subtitle={t('reports.subtitle')} />
+      <PageHeader title={t('reports.title')} subtitle={t('reports.subtitle')} glossary />
       {rangePicker}
 
-      <section className="grid grid-cols-2 gap-3 nav:grid-cols-4 nav:gap-4" aria-label={t('reports.title')}>
+      <section className="grid grid-cols-2 gap-3 nav:grid-cols-4 nav:gap-4" aria-labelledby="reports-totals-title">
+        <h2 id="reports-totals-title" className="sr-only">
+          {t('reports.totals')}
+        </h2>
         {stats.map((s) => (
           <Card key={s.id} className="flex flex-col gap-1 p-3.5 min-[420px]:p-4.5">
             <p className="text-sm text-muted">{s.label}</p>
-            <p className={`truncate text-xl font-bold tracking-tight min-[420px]:text-2xl ${s.id === 'net' && net < 0 ? 'text-red-500' : 'text-strong'}`}>
+            <p className={`wrap-anywhere text-xl font-bold tracking-tight min-[420px]:text-2xl ${s.id === 'net' && net < 0 ? 'text-danger' : 'text-strong'}`}>
               {s.value}
             </p>
-            <p className="text-[13px] text-muted">{t('reports.lastMonths', { count: data.months.length })}</p>
+            <p className="text-sm text-muted">{t('reports.lastMonths', { count: data.months.length })}</p>
           </Card>
         ))}
       </section>
@@ -88,27 +94,27 @@ export function Reports() {
               <li key={m} className="flex flex-col gap-1.5 border-t border-line py-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                   <span className="font-medium text-strong">{formatMonth(m)}</span>
-                  <span className={`text-sm tabular-nums ${monthNet < 0 ? 'text-red-500' : 'text-muted'}`}>
+                  <span className={`text-sm tabular-nums ${monthNet < 0 ? 'text-danger' : 'text-muted'}`}>
                     {t('reports.netOf', { amount: formatMoney(monthNet) })}
                     {data.incomeCents[i] > 0 && ` · ${t('reports.rateOf', { rate: formatPercent(monthNet / data.incomeCents[i]) })}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="w-16 shrink-0 text-[13px] text-muted">{t('reports.income')}</span>
+                  <span className="w-16 shrink-0 text-sm text-muted">{t('reports.income')}</span>
                   <div className="flex-1">
                     <ProgressBar ratio={data.incomeCents[i] / peak} label={`${formatMonth(m)} ${t('reports.income')}`} />
                   </div>
                   <span className="w-24 shrink-0 text-right text-sm text-strong tabular-nums">{formatMoney(data.incomeCents[i])}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="w-16 shrink-0 text-[13px] text-muted">{t('reports.spent')}</span>
+                  <span className="w-16 shrink-0 text-sm text-muted">{t('reports.spent')}</span>
                   <div className="flex-1">
                     <ProgressBar ratio={data.spentCents[i] / peak} over={data.spentCents[i] > data.incomeCents[i]} label={`${formatMonth(m)} ${t('reports.spent')}`} />
                   </div>
                   <span className="w-24 shrink-0 text-right text-sm text-strong tabular-nums">{formatMoney(data.spentCents[i])}</span>
                 </div>
                 {overBudget && (
-                  <span className="text-[13px] text-red-500">
+                  <span className="text-sm text-danger">
                     {t('reports.overBudget', { amount: formatMoney(data.spentCents[i] - data.budgetCents) })}
                   </span>
                 )}
@@ -116,7 +122,7 @@ export function Reports() {
             )
           })}
         </ul>
-        {data.budgetCents > 0 && <p className="pt-2 text-[13px] text-muted">{t('reports.budgetNote')}</p>}
+        {data.budgetCents > 0 && <p className="pt-2 text-sm text-muted">{t('reports.budgetNote')}</p>}
       </Card>
 
       <Card className="px-5 pt-2 pb-3" aria-labelledby="cats-title">
@@ -137,7 +143,7 @@ export function Reports() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="flex min-w-0 items-center gap-2 font-medium text-strong">
                       <Icon name={categoryIcon(c.name)} size={16} className="shrink-0 text-muted" />
-                      <span className="truncate">{categoryName(c.name)}</span>
+                      <span className="wrap-anywhere">{categoryName(c.name)}</span>
                     </span>
                     <span className="shrink-0 text-sm text-muted tabular-nums">
                       <span className="font-semibold text-strong">{formatMoney(total)}</span>
@@ -145,7 +151,7 @@ export function Reports() {
                     </span>
                   </div>
                   <ProgressBar ratio={spent > 0 ? total / spent : 0} label={categoryName(c.name)} />
-                  <span className="text-[13px] text-muted tabular-nums">
+                  <span className="text-sm text-muted tabular-nums">
                     {t('reports.average', { amount: formatMoney(Math.round(total / data.months.length)) })}
                     {change !== null &&
                       ` · ${t('reports.vsPrevious', { change: `${change >= 0 ? '+' : ''}${Math.round(change * 100)}%` })}`}

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Button } from '../components/ui/Button.tsx'
+import { Button, LinkButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
@@ -16,12 +16,21 @@ export function Dashboard() {
   const [budgetInput, setBudgetInput] = useState('')
   const [budgetError, setBudgetError] = useState<string>()
 
-  if (loading) return <p className="text-muted">{t('common.loading')}</p>
-  if (error || !data) {
+  // The heading is there while loading or after an error, so the page always has one.
+  if (loading || error || !data) {
     return (
-      <p className="text-muted" role="alert">
-        {t('dashboard.loadError', { error: error ?? t('dashboard.noData') })}
-      </p>
+      <div className="flex max-w-275 flex-col gap-6">
+        <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.subtitle')} />
+        {loading ? (
+          <p className="text-muted" role="status">
+            {t('common.loading')}
+          </p>
+        ) : (
+          <p className="text-muted" role="alert">
+            {t('dashboard.loadError', { error: error ?? t('dashboard.noData') })}
+          </p>
+        )}
+      </div>
     )
   }
 
@@ -99,15 +108,18 @@ export function Dashboard() {
 
       <section
         className="grid grid-cols-2 gap-3 nav:grid-cols-4 nav:gap-4"
-        aria-label={t('dashboard.title')}
+        aria-labelledby="dashboard-summary-title"
       >
+        <h2 id="dashboard-summary-title" className="sr-only">
+          {t('dashboard.summary')}
+        </h2>
         {stats.map((s) => (
           <Card key={s.id} className="flex flex-col gap-1 p-3.5 min-[420px]:p-4.5">
             <p className="text-sm text-muted">{s.label}</p>
-            <p className="truncate text-xl font-bold tracking-tight text-strong min-[420px]:text-2xl">
+            <p className="wrap-anywhere text-xl font-bold tracking-tight text-strong min-[420px]:text-2xl">
               {s.value}
             </p>
-            <p className="text-[13px] text-muted">{s.hint}</p>
+            <p className="text-sm text-muted">{s.hint}</p>
             {s.id === 'budget' &&
               (editingBudget ? (
                 <form onSubmit={saveBudget} className="mt-1 flex flex-col gap-1.5">
@@ -119,34 +131,35 @@ export function Dashboard() {
                     value={budgetInput}
                     onChange={(e) => setBudgetInput(e.target.value)}
                     aria-label={t('dashboard.budgetLabel')}
+                    aria-describedby="budget-hint"
                     placeholder={t('dashboard.budgetLabel')}
-                    className="min-h-9 w-full rounded-[10px] border border-line bg-surface px-2.5 text-strong"
+                    className="min-h-11 w-full rounded-[10px] border border-field bg-surface px-2.5 text-strong"
                   />
+                  <p id="budget-hint" className="text-sm text-muted">
+                    {t('hint.budget', { currency })}
+                  </p>
                   <div className="flex gap-2">
-                    <Button type="submit" className="min-h-8 flex-1 text-sm">
+                    <Button type="submit" className="flex-1 text-sm">
                       {t('common.save')}
                     </Button>
-                    <button
-                      type="button"
-                      className="cursor-pointer text-sm text-muted hover:text-strong"
+                    <LinkButton
                       onClick={() => {
                         setEditingBudget(false)
                         setBudgetError(undefined)
                       }}
                     >
                       {t('common.cancel')}
-                    </button>
+                    </LinkButton>
                   </div>
                   {budgetError && (
-                    <p className="text-[13px] text-red-500" role="alert">
+                    <p className="text-sm text-danger" role="alert">
                       {budgetError}
                     </p>
                   )}
                 </form>
               ) : (
-                <button
-                  type="button"
-                  className="mt-1 cursor-pointer self-start text-[13px] font-medium text-accent-text hover:underline"
+                <LinkButton
+                  className="self-start"
                   onClick={() => {
                     setBudgetInput(
                       data.budgetCents
@@ -157,21 +170,24 @@ export function Dashboard() {
                   }}
                 >
                   {data.budgetCents ? t('dashboard.editBudget') : t('dashboard.setBudget')}
-                </button>
+                </LinkButton>
               ))}
           </Card>
         ))}
       </section>
 
       {data.incomeCents > 0 && (
-        <section className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-3 nav:gap-4" aria-label={t('dashboard.cashFlow')}>
+        <section className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-3 nav:gap-4" aria-labelledby="dashboard-cashflow-title">
+          <h2 id="dashboard-cashflow-title" className="sr-only">
+            {t('dashboard.cashFlow')}
+          </h2>
           {cashFlow.map((s) => (
             <Card key={s.id} className="flex flex-col gap-1 p-3.5 min-[420px]:p-4.5">
               <p className="text-sm text-muted">{s.label}</p>
-              <p className={`truncate text-xl font-bold tracking-tight min-[420px]:text-2xl ${s.id !== 'income' && net < 0 ? 'text-red-500' : 'text-strong'}`}>
+              <p className={`wrap-anywhere text-xl font-bold tracking-tight min-[420px]:text-2xl ${s.id !== 'income' && net < 0 ? 'text-danger' : 'text-strong'}`}>
                 {s.value}
               </p>
-              <p className="text-[13px] text-muted">{s.hint}</p>
+              <p className="text-sm text-muted">{s.hint}</p>
             </Card>
           ))}
         </section>
@@ -187,9 +203,9 @@ export function Dashboard() {
               <li key={c.name} className="flex items-center justify-between gap-4 border-t border-line py-3">
                 <span className="flex min-w-0 items-center gap-1.5 font-medium text-strong">
                   <Icon name={categoryIcon(c.name)} size={15} className="shrink-0 text-muted" />
-                  <span className="truncate">{categoryName(c.name)}</span>
+                  <span className="wrap-anywhere">{categoryName(c.name)}</span>
                 </span>
-                <span className="shrink-0 text-sm text-red-500 tabular-nums">
+                <span className="shrink-0 text-sm text-danger tabular-nums">
                   {t('dashboard.overBy', { amount: formatMoney(c.spentCents - c.limitCents), limit: formatMoney(c.limitCents) })}
                 </span>
               </li>
@@ -214,13 +230,13 @@ export function Dashboard() {
                 className="flex items-center justify-between gap-4 border-t border-line py-3.5"
               >
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate font-medium text-strong">{e.title}</span>
-                  <span className="flex items-center gap-1 text-[13px] text-muted">
+                  <span className="wrap-anywhere font-medium text-strong">{e.title}</span>
+                  <span className="flex items-center gap-1 text-sm text-muted">
                     <Icon name={categoryIcon(e.category)} size={13} className="shrink-0" />
                     {categoryName(e.category)} · {formatDate(e.date)}
                   </span>
                   {e.description && (
-                    <span className="truncate text-[13px] text-muted">{e.description}</span>
+                    <span className="wrap-anywhere text-sm text-muted">{e.description}</span>
                   )}
                 </div>
                 <div className="flex shrink-0 flex-col items-end">
@@ -228,7 +244,7 @@ export function Dashboard() {
                     {formatMoney(e.amountCents, e.currency)}
                   </span>
                   {ratesReady && e.currency !== currency && (
-                    <span className="text-[13px] text-muted tabular-nums">
+                    <span className="text-sm text-muted tabular-nums">
                       {formatIn(e.amountCents, e.currency)}
                     </span>
                   )}

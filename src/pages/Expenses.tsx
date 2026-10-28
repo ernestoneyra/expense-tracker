@@ -1,17 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import { Button, IconButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
+import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
+import { AmountField, Field, inputClass } from '../components/ui/fields.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
 import { categoryIcon } from '../config/categoryIcons.ts'
-import { CURRENCIES, amountStepFor, isCurrency } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, useApi, type Category, type Expense, type NewExpense } from '../lib/api.ts'
-
-const inputClass =
-  'min-h-10 w-full rounded-[10px] border border-line bg-surface px-3 text-strong placeholder:text-muted'
-
-const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+import { today } from '../lib/money.ts'
 
 export function Expenses() {
   const { t, formatMoney, formatIn, ratesReady, formatDate, currency, entryCurrency, categoryName } = usePreferences()
@@ -26,6 +23,7 @@ export function Expenses() {
   const [expenseCurrency, setExpenseCurrency] = useState(entryCurrency)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string>()
+  const [pendingDelete, setPendingDelete] = useState<Expense>()
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -52,9 +50,10 @@ export function Expenses() {
     }
   }
 
-  const remove = async (id: string) => {
+  const remove = async (expense: Expense) => {
+    setPendingDelete(undefined)
     try {
-      await api(`/expenses/${id}`, { method: 'DELETE' })
+      await api(`/expenses/${expense.id}`, { method: 'DELETE' })
       reload()
     } catch (err) {
       setFormError((err as Error).message)
@@ -70,8 +69,7 @@ export function Expenses() {
           {t('expenses.new')}
         </h2>
         <form onSubmit={submit} className="grid gap-3 min-[560px]:grid-cols-2 nav:grid-cols-4">
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('expenses.fieldTitle')}
+          <Field label={t('expenses.fieldTitle')} hint={t('hint.title')}>
             <input
               required
               maxLength={120}
@@ -80,15 +78,9 @@ export function Expenses() {
               placeholder={t('expenses.titlePlaceholder')}
               className={inputClass}
             />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('expenses.category')}
-            <select
-              required
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={inputClass}
-            >
+          </Field>
+          <Field label={t('expenses.category')} hint={t('hint.category')}>
+            <select required value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
               <option value="" disabled>
                 {t('expenses.selectCategory')}
               </option>
@@ -98,47 +90,23 @@ export function Expenses() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('expenses.date')}
-            <input
-              required
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className={inputClass}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('expenses.amount')}
-            <div className="grid grid-cols-[65fr_35fr] gap-2">
-              <input
-                required
-                type="number"
-                min={amountStepFor(expenseCurrency)}
-                step={amountStepFor(expenseCurrency)}
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder={amountStepFor(expenseCurrency) < 1 ? '0.00' : '0'}
-                className={`${inputClass} min-w-0`}
-              />
-              <select
-                value={expenseCurrency}
-                onChange={(e) => isCurrency(e.target.value) && setExpenseCurrency(e.target.value)}
-                aria-label={t('expenses.currency')}
-                className={`${inputClass} min-w-0`}
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-muted min-[560px]:col-span-2 nav:col-span-4">
-            {t('expenses.description')}
+          </Field>
+          <Field label={t('expenses.date')} hint={t('hint.date')}>
+            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+          </Field>
+          <AmountField
+            label={t('expenses.amount')}
+            hint={t('hint.amount')}
+            amount={amount}
+            onAmount={setAmount}
+            currency={expenseCurrency}
+            onCurrency={setExpenseCurrency}
+          />
+          <Field
+            label={t('expenses.description')}
+            hint={t('hint.description')}
+            className="min-[560px]:col-span-2 nav:col-span-4"
+          >
             <input
               maxLength={500}
               value={description}
@@ -146,14 +114,14 @@ export function Expenses() {
               placeholder={t('expenses.descriptionPlaceholder')}
               className={inputClass}
             />
-          </label>
+          </Field>
           <div className="flex items-center gap-3 min-[560px]:col-span-2 nav:col-span-4">
             <Button type="submit" disabled={submitting}>
               <Icon name="plus" size={18} />
               {t('expenses.add')}
             </Button>
             {formError && (
-              <p className="text-sm text-red-500" role="alert">
+              <p className="text-sm text-danger" role="alert">
                 {formError}
               </p>
             )}
@@ -166,7 +134,7 @@ export function Expenses() {
           {t('expenses.all')}
         </h2>
         {loading ? (
-          <p className="border-t border-line py-6 text-center text-muted">{t('common.loading')}</p>
+          <p className="border-t border-line py-6 text-center text-muted" role="status">{t('common.loading')}</p>
         ) : error || !expenses ? (
           <p className="border-t border-line py-6 text-center text-muted" role="alert">
             {t('expenses.loadError', { error: error ?? '' })}
@@ -181,13 +149,13 @@ export function Expenses() {
                 className="flex items-center justify-between gap-3 border-t border-line py-3"
               >
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate font-medium text-strong">{e.title}</span>
-                  <span className="flex items-center gap-1 text-[13px] text-muted">
+                  <span className="wrap-anywhere font-medium text-strong">{e.title}</span>
+                  <span className="flex items-center gap-1 text-sm text-muted">
                     <Icon name={categoryIcon(e.category)} size={13} className="shrink-0" />
                     {categoryName(e.category)} · {formatDate(e.date)}
                   </span>
                   {e.description && (
-                    <span className="truncate text-[13px] text-muted">{e.description}</span>
+                    <span className="wrap-anywhere text-sm text-muted">{e.description}</span>
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
@@ -196,12 +164,12 @@ export function Expenses() {
                       {formatMoney(e.amountCents, e.currency)}
                     </span>
                     {ratesReady && e.currency !== currency && (
-                      <span className="text-[13px] text-muted tabular-nums">
+                      <span className="text-sm text-muted tabular-nums">
                         {formatIn(e.amountCents, e.currency)}
                       </span>
                     )}
                   </div>
-                  <IconButton onClick={() => remove(e.id)} aria-label={t('expenses.deleteLabel', { title: e.title })}>
+                  <IconButton onClick={() => setPendingDelete(e)} aria-label={t('expenses.deleteLabel', { title: e.title })}>
                     <Icon name="close" size={18} />
                   </IconButton>
                 </div>
@@ -210,6 +178,17 @@ export function Expenses() {
           </ul>
         )}
       </Card>
+
+      {pendingDelete && (
+        <ConfirmToast
+          title={t('expenses.confirmTitle', { title: pendingDelete.title })}
+          confirmLabel={t('common.delete')}
+          onConfirm={() => remove(pendingDelete)}
+          onCancel={() => setPendingDelete(undefined)}
+        >
+          {t('expenses.confirmBody')}
+        </ConfirmToast>
+      )}
     </div>
   )
 }

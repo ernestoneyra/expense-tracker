@@ -12,6 +12,7 @@ export type NavId =
   | 'debts'
   | 'reports'
   | 'settings'
+  | 'help'
 
 export interface NavItem {
   id: NavId
@@ -30,4 +31,5 @@ export const navItems: NavItem[] = [
   { id: 'debts', labelKey: 'nav.debts', icon: 'debts' },
   { id: 'reports', labelKey: 'nav.reports', icon: 'reports' },
   { id: 'settings', labelKey: 'nav.settings', icon: 'settings' },
+  { id: 'help', labelKey: 'nav.help', icon: 'help' },
 ]

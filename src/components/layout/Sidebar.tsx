@@ -1,5 +1,6 @@
 import { navItems, type NavId } from '../../config/navigation.ts'
 import { usePreferences } from '../../i18n/PreferencesContext.ts'
+import { hrefFor } from '../../lib/route.ts'
 import { Icon } from '../ui/Icon.tsx'
 
 interface SidebarProps {
@@ -11,7 +12,7 @@ interface SidebarProps {
 export function Sidebar({ open, active, onSelect }: SidebarProps) {
   const { t } = usePreferences()
   return (
-    <aside
+    <div
       id="app-sidebar"
       className={`sticky top-(--header-h) h-[calc(100svh-var(--header-h))] self-start overflow-y-auto border-r border-line bg-surface px-3 py-4 max-nav:fixed max-nav:bottom-0 max-nav:left-0 max-nav:z-20 max-nav:h-auto max-nav:w-[min(280px,82vw)] max-nav:transition-[transform,visibility] max-nav:duration-200 motion-reduce:transition-none ${
         open
@@ -19,23 +20,24 @@ export function Sidebar({ open, active, onSelect }: SidebarProps) {
           : 'max-nav:invisible max-nav:-translate-x-full'
       }`}
     >
-      <nav aria-label="Main">
+      <nav aria-label={t('nav.main')}>
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
           {navItems.map((item) => (
             <li key={item.id}>
-              <button
-                type="button"
-                className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-[10px] px-3 text-left font-medium text-body transition-colors hover:bg-hover hover:text-strong aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-text"
+              {/* The current page is marked with a bar and bold text as well as a tint (1.4.1). */}
+              <a
+                href={hrefFor(item.id)}
+                className="flex min-h-11 w-full items-center gap-3 rounded-[10px] border-l-4 border-transparent px-3 font-medium text-body no-underline transition-colors hover:bg-hover hover:text-strong aria-[current=page]:border-accent aria-[current=page]:bg-accent-soft aria-[current=page]:font-bold aria-[current=page]:text-accent-text"
                 aria-current={item.id === active ? 'page' : undefined}
                 onClick={() => onSelect(item.id)}
               >
                 <Icon name={item.icon} />
                 <span>{t(item.labelKey)}</span>
-              </button>
+              </a>
             </li>
           ))}
         </ul>
       </nav>
-    </aside>
+    </div>
   )
 }

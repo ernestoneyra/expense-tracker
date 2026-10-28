@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '../../components/ui/Button.tsx'
-import { Field, inputClass } from '../../components/ui/fields.tsx'
+import { Field, PercentInput } from '../../components/ui/fields.tsx'
 import { usePreferences } from '../../i18n/PreferencesContext.ts'
 import type { Overview } from '../../lib/api.ts'
 import { saveMethod, type PanelProps } from './methods.ts'
@@ -43,21 +43,8 @@ export function SplitPanel({ data, reload }: PanelProps & { data: Overview }) {
   const target = (percent: string) => (data.incomeCents > 0 ? Math.round((data.incomeCents * Number(percent)) / 100) : null)
 
   const percentField = (label: string, value: string, set: (v: string) => void) => (
-    <Field label={label}>
-      <div className="relative">
-        <input
-          required
-          type="number"
-          min="0"
-          max="100"
-          step="any"
-          inputMode="decimal"
-          value={value}
-          onChange={(e) => set(e.target.value)}
-          className={`${inputClass} pr-8`}
-        />
-        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted">%</span>
-      </div>
+    <Field label={label} hint={t('hint.percent')}>
+      <PercentInput required min="0" max="100" step="any" value={value} onChange={(e) => set(e.target.value)} />
     </Field>
   )
 
@@ -69,19 +56,19 @@ export function SplitPanel({ data, reload }: PanelProps & { data: Overview }) {
         active={data.method === 'split'}
       />
 
-      <form onSubmit={save} className="grid gap-3 min-[560px]:grid-cols-[1fr_1fr_1fr_auto] min-[560px]:items-end">
+      <form onSubmit={save} className="grid gap-3 min-[560px]:grid-cols-[1fr_1fr_1fr_auto] min-[560px]:items-start">
         {percentField(t('budgets.needs'), needs, setNeeds)}
         {percentField(t('budgets.wants'), wants, setWants)}
         {percentField(t('budgets.savings'), savings, setSavings)}
-        <Button type="submit" disabled={!valid}>
+        <Button type="submit" disabled={!valid} className="min-[560px]:mt-[25px]">
           {data.method === 'split' ? t('common.save') : t('budgets.useMethod')}
         </Button>
       </form>
-      <p className={`text-sm ${valid ? 'text-muted' : 'text-red-500'}`} role={valid ? undefined : 'alert'}>
+      <p className={`text-sm ${valid ? 'text-muted' : 'text-danger'}`} role={valid ? undefined : 'alert'}>
         {t('budgets.percentTotal', { total: Number.isFinite(total) ? Math.round(total * 100) / 100 : 0 })}
       </p>
       {error && (
-        <p className="text-sm text-red-500" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {error}
         </p>
       )}

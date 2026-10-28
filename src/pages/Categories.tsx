@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { Button, IconButton } from '../components/ui/Button.tsx'
+import { Button, ChipButton, IconButton } from '../components/ui/Button.tsx'
+import { Field, inputClass } from '../components/ui/fields.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
@@ -26,7 +27,8 @@ const sortOptions: { key: SortKey; labelKey: MessageKey }[] = [
   { key: 'frequency', labelKey: 'categories.sortFrequency' },
 ]
 
-const selectClass = 'min-h-9 rounded-[10px] border border-line bg-surface px-2 text-sm text-body'
+const selectClass = 'min-h-11 rounded-[10px] border border-field bg-surface px-2 text-sm text-body'
+
 
 export function Categories() {
   const { t, locale, categoryName } = usePreferences()
@@ -86,25 +88,24 @@ export function Categories() {
         <h2 id="add-category-title" className="pb-3 text-[17px] font-semibold text-strong">
           {t('categories.new')}
         </h2>
-        <form onSubmit={add} className="flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-end">
-          <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
-            {t('categories.name')}
+        <form onSubmit={add} className="flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-start">
+          <Field label={t('categories.name')} hint={t('hint.categoryName')} className="flex-1">
             <input
               required
               maxLength={40}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('categories.namePlaceholder')}
-              className="min-h-10 w-full rounded-[10px] border border-line bg-surface px-3 text-strong placeholder:text-muted"
+              className={inputClass}
             />
-          </label>
-          <Button type="submit" disabled={submitting}>
+          </Field>
+          <Button type="submit" disabled={submitting} className="min-[560px]:mt-[25px]">
             <Icon name="plus" size={18} />
             {t('categories.add')}
           </Button>
         </form>
         {formError && (
-          <p className="pt-3 text-sm text-red-500" role="alert">
+          <p className="pt-3 text-sm text-danger" role="alert">
             {formError}
           </p>
         )}
@@ -117,24 +118,14 @@ export function Categories() {
           </h2>
           <div role="group" aria-label={t('categories.sortLabel')} className="flex gap-1">
             {sortOptions.map((o) => (
-              <button
-                key={o.key}
-                type="button"
-                aria-pressed={sort === o.key}
-                onClick={() => setSort(o.key)}
-                className={`min-h-9 cursor-pointer rounded-[10px] px-3 text-sm font-medium ${
-                  sort === o.key
-                    ? 'bg-accent-soft text-accent-text'
-                    : 'text-body hover:bg-hover hover:text-strong'
-                }`}
-              >
+              <ChipButton key={o.key} pressed={sort === o.key} onClick={() => setSort(o.key)}>
                 {t(o.labelKey)}
-              </button>
+              </ChipButton>
             ))}
           </div>
         </div>
         {loading ? (
-          <p className="border-t border-line py-6 text-center text-muted">{t('common.loading')}</p>
+          <p className="border-t border-line py-6 text-center text-muted" role="status">{t('common.loading')}</p>
         ) : error || !sorted ? (
           <p className="border-t border-line py-6 text-center text-muted" role="alert">
             {t('categories.loadError', { error: error ?? '' })}
@@ -153,8 +144,8 @@ export function Categories() {
                     <Icon name={categoryIcon(c.name)} size={20} />
                   </span>
                   <div className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium text-strong">{categoryName(c.name)}</span>
-                    <span className="text-[13px] text-muted">
+                    <span className="wrap-anywhere font-medium text-strong">{categoryName(c.name)}</span>
+                    <span className="text-sm text-muted">
                       {t('categories.expenses', { count: c.count })}
                     </span>
                   </div>

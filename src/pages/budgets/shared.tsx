@@ -29,7 +29,7 @@ export function PanelHeader({
         </span>
       ) : (
         onActivate && (
-          <Button onClick={onActivate} className="min-h-9 text-sm">
+          <Button onClick={onActivate} className="text-sm">
             {t('budgets.useMethod')}
           </Button>
         )
@@ -47,10 +47,12 @@ interface TargetRowProps {
   /** A goal is met by reaching it; a limit is broken by passing it. */
   goal?: boolean
   detail?: ReactNode
+  /** The row's name as plain text, for the bar; needed when `label` is not a plain string. */
+  name?: string
 }
 
 /** One line of "so far vs target" with a bar and how far over / short or under / left it is. */
-export function TargetRow({ label, actual, target, goal = false, detail }: TargetRowProps) {
+export function TargetRow({ label, actual, target, goal = false, detail, name }: TargetRowProps) {
   const { t, formatMoney } = usePreferences()
   const difference = target === null ? null : actual - target
   // A limit is over when passed; a goal is "short" until reached.
@@ -58,7 +60,7 @@ export function TargetRow({ label, actual, target, goal = false, detail }: Targe
   return (
     <div className="flex flex-col gap-1.5 border-t border-line py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-medium text-strong">{label}</span>
+        <span className="min-w-0 wrap-anywhere font-medium text-strong">{label}</span>
         <span className="shrink-0 text-sm text-muted tabular-nums">
           <span className="font-semibold text-strong">{formatMoney(actual)}</span>
           {target !== null && ` / ${formatMoney(target)}`}
@@ -66,8 +68,8 @@ export function TargetRow({ label, actual, target, goal = false, detail }: Targe
       </div>
       {target !== null && (
         <>
-          <ProgressBar ratio={target > 0 ? actual / target : actual > 0 ? 1 : 0} over={!goal && bad} label={typeof label === 'string' ? label : ''} />
-          <span className={`text-[13px] tabular-nums ${bad ? 'text-red-500' : 'text-muted'}`}>
+          <ProgressBar ratio={target > 0 ? actual / target : actual > 0 ? 1 : 0} over={!goal && bad} label={name ?? (typeof label === 'string' ? label : '')} />
+          <span className={`text-sm tabular-nums ${bad ? 'text-danger' : 'text-muted'}`}>
             {goal
               ? bad
                 ? t('budgets.short', { amount: formatMoney(-difference!) })
@@ -78,7 +80,7 @@ export function TargetRow({ label, actual, target, goal = false, detail }: Targe
           </span>
         </>
       )}
-      {detail && <span className="text-[13px] text-muted">{detail}</span>}
+      {detail && <span className="text-sm text-muted">{detail}</span>}
     </div>
   )
 }
