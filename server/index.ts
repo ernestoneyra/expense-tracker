@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import express, { type ErrorRequestHandler } from 'express'
 import mongoose from 'mongoose'
+import { loadAuth, noStore, requireScope, sameOriginOnly, securityHeaders } from './auth/middleware.ts'
+import { seedGuests } from './auth/seed.ts'
 import { connectDb } from './db.ts'
 import { Budget } from './models/Budget.ts'
 import { Category } from './models/Category.ts'
@@ -11,6 +13,9 @@ import { Expense } from './models/Expense.ts'
 import { Goal } from './models/Goal.ts'
 import { Income } from './models/Income.ts'
 import { Recurring } from './models/Recurring.ts'
+import { Session } from './models/Session.ts'
+import { User } from './models/User.ts'
+import { authRouter } from './routes/auth.ts'
 import { budgetRouter } from './routes/budget.ts'
 import { categoriesRouter } from './routes/categories.ts'
 import { dataRouter } from './routes/data.ts'
@@ -25,28 +30,41 @@ import { recurringMiddleware } from './recurring.ts'
 import { RatesUnavailableError } from './rates.ts'
 import { sandboxRouter } from './routes/sandbox.ts'
 import { summaryRouter } from './routes/summary.ts'
-import { DEMO_MODE, sandboxMiddleware, seedLocalCategories, startSandboxCleanup } from './sandbox.ts'
+import { DEMO_MODE, startSandboxCleanup } from './sandbox.ts'
 
 const app = express()
 app.disable('x-powered-by')
-// A backup is far bigger than the 100 kB default allows. Body parsers skip a body that is already
-// parsed, so this must come first; every other route keeps the default limit.
-app.use('/api/data', express.json({ limit: '10mb' }))
+// Behind a reverse proxy (Render, nginx, a load balancer) the address and protocol the browser used
+// are in X-Forwarded-* headers. Trusting them without a proxy would let anyone fake their address
+// and skip the sign-in rate limits, so it's opt-in: TRUST_PROXY=1 for one proxy in front.
+if (process.env.TRUST_PROXY) {
+  const hops = Number(process.env.TRUST_PROXY)
+  app.set('trust proxy', Number.isInteger(hops) ? hops : process.env.TRUST_PROXY)
+}
+app.use(securityHeaders)
+app.use('/api', sameOriginOnly)
+// A backup is far bigger than the 100 kB default allows, so only people who are signed in may
+// send a body that large. Body parsers skip a body that is already parsed, so this must come first;
+// every other route keeps the default limit.
+app.use('/api/data', loadAuth, requireScope, express.json({ limit: '10mb' }))
 app.use(express.json())
 
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', noStore, (_req, res) => {
   const connected = mongoose.connection.readyState === 1
   res.status(connected ? 200 : 503).json({ ok: connected, db: mongoose.connection.name, demo: DEMO_MODE })
 })
 
-app.use('/api/rates', ratesRouter)
+app.use('/api', loadAuth)
+app.use('/api/auth', authRouter)
+// Exchange rates are the same for everyone, so reading them needs no account (the app loads them
+// before anyone has signed in). Asking the provider for fresh ones does.
+app.use('/api/rates', (req, res, next) => (req.method === 'GET' ? next() : requireScope(req, res, next)), ratesRouter)
 
-// In demo mode everything below is private to one visitor's sandbox. Otherwise there are no sandboxes,
-// and the reset route must not exist: it would wipe the real data.
-if (DEMO_MODE) {
-  app.use('/api', sandboxMiddleware)
-  app.use('/api/sandbox', sandboxRouter)
-}
+// Everything below is one person's data, so it needs to know whose: an account, or in a hosted
+// demo a private sandbox. Outside demo mode there are no sandboxes, and the reset route must not
+// exist for it to be reachable.
+app.use('/api', noStore, requireScope)
+if (DEMO_MODE) app.use('/api/sandbox', sandboxRouter)
 // Bills and paychecks that have fallen due become real entries before anything reads them.
 app.use(
   ['/api/expenses', '/api/income', '/api/budget', '/api/summary', '/api/goals', '/api/debts', '/api/recurring', '/api/reports'],
@@ -109,9 +127,9 @@ try {
   // Drop indexes the schemas no longer define, e.g. the old global-unique category name, which
   // would otherwise stop two sandboxes from having a category with the same name.
   await Promise.all(
-    [Budget, Category, CategoryBudget, Debt, Expense, Goal, Income, Recurring].map((m) => m.syncIndexes()),
+    [Budget, Category, CategoryBudget, Debt, Expense, Goal, Income, Recurring, User, Session].map((m) => m.syncIndexes()),
   )
-  if (!DEMO_MODE) await seedLocalCategories()
+  await seedGuests()
 } catch (err) {
   console.error('Failed to connect to MongoDB:', err instanceof Error ? err.message : err)
   process.exit(1)

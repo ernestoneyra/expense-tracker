@@ -5,6 +5,36 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Accounts.** Everyone now signs in, and has their own private expenses, budgets, goals, debts and recurring items; nothing is shared between accounts.
+  - Register with a username and password, or sign in with **Google** or **GitHub** (OAuth 2.0 authorization code flow with PKCE; each provider is switched on by setting its client id and secret, see the README).
+  - Two shared demo accounts, **`guest1`** and **`guest2`**, both with the password `password`, are created on first start with sample data. They can't be deleted or have their password changed; `SEED_GUESTS=false` turns them off.
+  - **Settings → Account**: change your password, sign out of your other devices, delete your account and everything in it.
+  - An account menu in the header with who is signed in, a link to the account settings, and sign out.
+  - The sign-in and registration pages are in all four languages, work with a keyboard and screen reader (errors are announced and take focus), and pass the accessibility checks. `npm run a11y` now signs in as `guest1` and also checks them.
+- `npm run claim-data -- <username>` gives data saved before accounts existed to an empty account.
+- `npm test`: unit tests for password hashing, usernames, cookies, rate limiting and the OAuth helpers.
+- Environment variables `APP_URL`, `TRUST_PROXY`, `SEED_GUESTS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
+
+### Security
+
+- Passwords are hashed with scrypt. Sessions are random tokens in an `HttpOnly`, `SameSite=Lax` (and `Secure` over HTTPS) cookie; only a hash of the token is stored. Signing out ends the session on the server; changing the password ends the other sessions.
+- Failed sign-ins, registrations and password confirmations are rate limited. A wrong password and an unknown username give the same answer in the same time.
+- Browser requests that change data from another site are refused. The server sends a Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, a referrer policy and HSTS over HTTPS, and account and data responses are `no-store`.
+- Google and GitHub accounts are matched by the provider's account id, never by email, so registering with someone's address can't take over their account.
+
+### Changed
+
+- **Breaking:** the API now needs a signed-in session. Outside demo mode there is no longer a single shared dataset: data saved before accounts existed has no owner until it is claimed with `npm run claim-data`.
+- In demo mode, visitors can still use a private anonymous sandbox through **Try the demo without an account**; signing in is the alternative.
+- Signing out returns to the sign-in page, and the next person to sign in starts on the dashboard.
+- `POST /api/rates/refresh` needs a session; `GET /api/rates` stays open so the sign-in page can load.
+- The theme script moved from `index.html` to `public/theme-init.js`, so the Content-Security-Policy can forbid inline scripts.
+- `render.yaml` sets `TRUST_PROXY=1` and asks for `APP_URL`.
+
 ## [0.8.0] - 2026-10-28
 
 ### Added

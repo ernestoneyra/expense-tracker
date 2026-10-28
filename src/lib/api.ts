@@ -202,14 +202,32 @@ export interface Report {
   budgetCents: number
 }
 
+/** A failed request. `code` is the server's machine-readable reason (e.g. `username_taken`), when it gave one. */
+export class ApiError extends Error {
+  readonly status: number
+  readonly code?: string
+
+  constructor(message: string, status: number, code?: string) {
+    super(message)
+    this.status = status
+    this.code = code
+  }
+}
+
+/** Fired when the server says nobody is signed in, e.g. because the session expired. */
+export const UNAUTHORIZED_EVENT = 'expenser:unauthorized'
+
 async function request(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers)
+  // Only used by the hosted demo's anonymous sandboxes; the server ignores it for signed-in people.
   headers.set('x-sandbox-id', getSandboxId())
   if (init?.body) headers.set('content-type', 'application/json')
+  // The session cookie rides along on its own (same origin).
   const res = await fetch(`/api${path}`, { ...init, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new Error(body?.error ?? `Request failed (${res.status})`)
+    if (body?.code === 'unauthorized') window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+    throw new ApiError(body?.error ?? `Request failed (${res.status})`, res.status, body?.code)
   }
   return res
 }
@@ -220,8 +238,8 @@ export const SAVED_EVENT = 'expenser:saved'
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await request(path, init)
   const method = (init?.method ?? 'GET').toUpperCase()
-  // Reading data, and refreshing exchange rates, are not changes the person made to their data.
-  if (method !== 'GET' && !path.startsWith('/rates')) {
+  // Reading data, refreshing exchange rates and signing in or out are not changes the person made to their data.
+  if (method !== 'GET' && !path.startsWith('/rates') && !path.startsWith('/auth')) {
     window.dispatchEvent(new CustomEvent(SAVED_EVENT, { detail: { method } }))
   }
   return res.status === 204 ? (undefined as T) : res.json()

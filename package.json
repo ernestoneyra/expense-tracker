@@ -12,6 +12,8 @@
     "server": "node --use-system-ca --watch --env-file=.env server/index.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "node --test \"server/**/*.test.ts\"",
+    "claim-data": "node --env-file=.env server/claimLegacyData.ts",
     "preview": "vite preview",
     "start": "node --env-file-if-exists=.env server/index.ts",
     "a11y": "node scripts/a11y/contrast.mjs && node scripts/a11y/audit.mjs && node scripts/a11y/behaviour.mjs"

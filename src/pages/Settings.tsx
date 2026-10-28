@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
+import { useAuth } from '../auth/AuthContext.ts'
 import { Button, DangerButton, SecondaryButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
@@ -8,6 +9,7 @@ import { useTheme, type ThemePreference } from '../hooks/useTheme.ts'
 import { CURRENCIES, LANGUAGES, isCurrency, isLanguage, type MessageKey } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, download, useApi } from '../lib/api.ts'
+import { AccountCard } from './settings/AccountCard.tsx'
 
 const THEMES: { value: ThemePreference; label: MessageKey }[] = [
   { value: 'system', label: 'settings.themeSystem' },
@@ -45,6 +47,7 @@ export function Settings() {
     refreshRates,
   } = usePreferences()
   const { preference: themePreference, setPreference: setThemePreference } = useTheme()
+  const { user } = useAuth()
   // Only a hosted demo has sandboxes to reset; with your own data the card (and the route) don't exist.
   const { data: health } = useApi<{ demo: boolean }>('/health')
 
@@ -143,6 +146,8 @@ export function Settings() {
   return (
     <div className="flex max-w-275 flex-col gap-6">
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} glossary />
+
+      <AccountCard />
 
       <Card className="flex flex-col gap-3 p-4 nav:p-5" aria-labelledby="display-title">
         <h2 id="display-title" className="font-semibold text-strong">
@@ -282,7 +287,7 @@ export function Settings() {
           <h2 id="demo-title" className="font-semibold text-strong">
             {t('settings.demoTitle')}
           </h2>
-          <p className="text-sm text-muted">{t('settings.demoNote')}</p>
+          <p className="text-sm text-muted">{t(user ? 'settings.demoAccountNote' : 'settings.demoNote')}</p>
           <Button onClick={() => setConfirming('reset')}>{t('settings.resetDemo')}</Button>
           <StatusLine status={resetStatus} />
         </Card>

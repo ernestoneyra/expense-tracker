@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, Ref } from 'react'
 
 // 2.5.5: everything you can press is at least 44 × 44 CSS pixels (min-h-11 / size-11).
 
@@ -34,7 +34,7 @@ export function DangerButton({ className = '', ...rest }: ButtonHTMLAttributes<H
   )
 }
 
-export function IconButton({ className = '', ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
+export function IconButton({ className = '', ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { ref?: Ref<HTMLButtonElement> }) {
   return (
     <button
       type="button"

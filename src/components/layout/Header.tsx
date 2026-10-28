@@ -1,6 +1,7 @@
 import { usePreferences } from '../../i18n/PreferencesContext.ts'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { Icon } from '../ui/Icon.tsx'
+import { AccountMenu } from './AccountMenu.tsx'
 
 interface HeaderProps {
   menuOpen: boolean
@@ -42,9 +43,7 @@ export function Header({ menuOpen, onMenuToggle, onAddExpense }: HeaderProps) {
           <Icon name="plus" size={18} />
           <span className="max-nav:hidden">{t('header.addExpense')}</span>
         </Button>
-        <IconButton className="rounded-full border border-field" aria-label={t('header.account')}>
-          <Icon name="user" />
-        </IconButton>
+        <AccountMenu />
       </div>
     </header>
   )
