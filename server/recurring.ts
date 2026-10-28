@@ -1,4 +1,5 @@
 import type { RequestHandler } from 'express'
+import { trusted } from 'mongoose'
 import { Expense } from './models/Expense.ts'
 import { Income } from './models/Income.ts'
 import { Recurring, type Frequency } from './models/Recurring.ts'
@@ -31,7 +32,7 @@ export const monthlyFactor: Record<Frequency, number> = { weekly: 52 / 12, month
  */
 export async function processRecurring(sandbox: string | null, now = new Date()) {
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
-  const items = await Recurring.find({ sandbox, active: true, nextDue: { $lte: today } })
+  const items = await Recurring.find({ sandbox, active: true, nextDue: trusted({ $lte: today }) })
   if (items.length === 0) return
 
   let expenseCount = DEMO_MODE ? await Expense.countDocuments({ sandbox }) : 0

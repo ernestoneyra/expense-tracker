@@ -1,4 +1,6 @@
 import { randomInt } from 'node:crypto'
+import { AuthCode } from '../models/AuthCode.ts'
+import { RefreshToken } from '../models/RefreshToken.ts'
 import { Session } from '../models/Session.ts'
 import { USERNAME_PATTERN, User, type UserDoc } from '../models/User.ts'
 import { accountScope, provisionAccount, wipe } from '../sandbox.ts'
@@ -78,6 +80,10 @@ export async function createOAuthUser(hint: string, rest: Omit<NewUser, 'usernam
 export async function deleteAccount(user: UserDoc) {
   // Data and sessions first: if this stops half-way, the person can still sign in and try again.
   await wipe(accountScope(user._id))
-  await Session.deleteMany({ userId: user._id })
+  await Promise.all([
+    Session.deleteMany({ userId: user._id }),
+    RefreshToken.deleteMany({ userId: user._id }),
+    AuthCode.deleteMany({ userId: user._id }),
+  ])
   await user.deleteOne()
 }

@@ -1,7 +1,8 @@
 import { Router, type Request, type Response } from 'express'
+import { trusted } from 'mongoose'
 import { createOAuthUser, checkUsername, createUser, deleteAccount, UsernameTaken } from '../auth/accounts.ts'
 import { clearCookie, cookiesOf, setCookie } from '../auth/cookies.ts'
-import { authOf, noStore, publicUser, requireUser } from '../auth/middleware.ts'
+import { authOf, loadAuth, noStore, publicUser, requireUser } from '../auth/middleware.ts'
 import {
   authorizeUrl,
   configuredProviders,
@@ -13,7 +14,10 @@ import {
 } from '../auth/oauth.ts'
 import { checkNewPassword, hashPassword, verifyAgainstDummy, verifyPassword } from '../auth/password.ts'
 import { RateLimiter } from '../auth/rateLimit.ts'
-import { SESSION_COOKIE, endOtherSessions, endSession, startSession } from '../auth/sessions.ts'
+import { SESSION_COOKIE, authenticate, currentSessionId, endOtherSessions, endSession, startSession } from '../auth/sessions.ts'
+import { baseUrl } from '../auth/url.ts'
+import { clearRefreshCookie } from '../oauth/refreshCookie.ts'
+import { revokeOtherFamilies } from '../oauth/tokens.ts'
 import { User } from '../models/User.ts'
 import { DEMO_MODE } from '../sandbox.ts'
 
@@ -50,13 +54,20 @@ const tooMany = (res: Response, seconds: number) =>
 
 // Always 200: not being signed in is an answer, not an error. The sign-in page also learns here
 // which providers are configured and whether anonymous demo sandboxes exist.
-authRouter.get('/session', (_req, res) => {
-  const auth = authOf(res)
+authRouter.get('/session', async (req, res) => {
+  // The sign-in cookie, not an access token: is this person already signed in to the authorization
+  // server? It is how the app finds out it can ask for tokens without showing a form.
+  const session = await authenticate(req, res)
   res.json({
-    user: auth ? publicUser(auth.user) : null,
+    user: session ? publicUser(session.user) : null,
     providers: configuredProviders().map(({ id, label }) => ({ id, label })),
     demo: DEMO_MODE,
   })
+})
+
+// Who the access token in the request belongs to.
+authRouter.get('/me', loadAuth, requireUser, (_req, res) => {
+  res.json({ user: publicUser(authOf(res)!.user) })
 })
 
 // ---------------------------------------------------------------------------------------------
@@ -120,8 +131,11 @@ authRouter.post('/login', async (req, res) => {
   res.json({ user: publicUser(user) })
 })
 
+// Ends the sign-in cookie and drops the refresh cookie. The app also revokes the refresh token itself
+// on the server (POST /api/oauth/revoke).
 authRouter.post('/logout', async (req, res) => {
   await endSession(req, res)
+  clearRefreshCookie(req, res)
   res.status(204).end()
 })
 
@@ -129,14 +143,15 @@ authRouter.post('/logout', async (req, res) => {
 // Managing your own account
 // ---------------------------------------------------------------------------------------------
 
-authRouter.post('/logout-others', requireUser, async (_req, res) => {
-  const { user, sessionId } = authOf(res)!
-  await endOtherSessions(user._id, sessionId)
+// These three act on the account, so they need an access token (and the last two ask for the password again).
+authRouter.post('/logout-others', loadAuth, requireUser, async (req, res) => {
+  const { user, familyId } = authOf(res)!
+  await Promise.all([revokeOtherFamilies(user._id, familyId), endOtherSessions(user._id, await currentSessionId(req))])
   res.status(204).end()
 })
 
-authRouter.post('/password', requireUser, async (req, res) => {
-  const { user, sessionId } = authOf(res)!
+authRouter.post('/password', loadAuth, requireUser, async (req, res) => {
+  const { user, familyId } = authOf(res)!
   if (user.isGuest) return fail(res, 403, 'guest_account', 'The demo accounts keep their password')
   if (!user.passwordHash) return fail(res, 400, 'no_password', 'This account signs in with a provider')
 
@@ -154,12 +169,13 @@ authRouter.post('/password', requireUser, async (req, res) => {
 
   user.passwordHash = await hashPassword(newPassword as string)
   await user.save()
-  // Whoever else had the old password, or a session open, is signed out; this browser stays in.
-  await endOtherSessions(user._id, sessionId)
+  // Whoever else had the old password, or a sign-in open, is signed out; this browser stays in. (Their
+  // access tokens can't be recalled, but run out within minutes.)
+  await Promise.all([revokeOtherFamilies(user._id, familyId), endOtherSessions(user._id, await currentSessionId(req))])
   res.status(204).end()
 })
 
-authRouter.delete('/account', requireUser, async (req, res) => {
+authRouter.delete('/account', loadAuth, requireUser, async (req, res) => {
   const { user } = authOf(res)!
   if (user.isGuest) return fail(res, 403, 'guest_account', 'The demo accounts can not be deleted')
 
@@ -178,18 +194,13 @@ authRouter.delete('/account', requireUser, async (req, res) => {
 
   await deleteAccount(user)
   clearCookie(req, res, SESSION_COOKIE)
+  clearRefreshCookie(req, res)
   res.status(204).end()
 })
 
 // ---------------------------------------------------------------------------------------------
 // Sign in with Google / GitHub
 // ---------------------------------------------------------------------------------------------
-
-/** Where this app is reached from; must match the redirect URI registered with the provider. */
-function baseUrl(req: Request) {
-  const configured = process.env.APP_URL?.replace(/\/+$/, '')
-  return configured ?? `${req.protocol}://${req.get('host')}`
-}
 
 const redirectUri = (req: Request, provider: string) => `${baseUrl(req)}/api/auth/oauth/${provider}/callback`
 
@@ -231,7 +242,7 @@ authRouter.get('/oauth/:provider/callback', async (req, res) => {
 
     // Matched on the provider's account id only. Matching on email would let anyone who registers
     // with someone else's address take over that account.
-    let user = await User.findOne({ identities: { $elemMatch: { provider: provider.id, subject: profile.subject } } })
+    let user = await User.findOne({ identities: trusted({ $elemMatch: { provider: provider.id, subject: profile.subject } }) })
     if (!user) {
       user = await createOAuthUser(profile.usernameHint, {
         email: profile.email,

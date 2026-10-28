@@ -9,30 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Accounts.** Everyone now signs in, and has their own private expenses, budgets, goals, debts and recurring items; nothing is shared between accounts.
-  - Register with a username and password, or sign in with **Google** or **GitHub** (OAuth 2.0 authorization code flow with PKCE; each provider is switched on by setting its client id and secret, see the README).
+- **Accounts, and an OAuth 2.0 server of its own.** Everyone now signs in, and has their own private expenses, budgets, goals, debts and recurring items; nothing is shared between accounts.
+  - The app is its own authorization server and resource server. The web app signs in with the authorization code flow and S256 PKCE (`GET /api/oauth/authorize`, `POST /api/oauth/token`), gets a short-lived signed access token (a JWT, Ed25519, 15 minutes) and a rotating refresh token, and the API only accepts `Authorization: Bearer`. The refresh token is delivered in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/api/oauth`, so scripts on the page never see it. Also `POST /api/oauth/revoke` (RFC 7009), `GET /api/oauth/jwks` and `GET /.well-known/oauth-authorization-server` (RFC 8414).
+  - Register with a username and password, or sign in with **Google** or **GitHub** (each switched on by setting its client id and secret, see the README). Either way the app's own tokens are what the API sees.
   - Two shared demo accounts, **`guest1`** and **`guest2`**, both with the password `password`, are created on first start with sample data. They can't be deleted or have their password changed; `SEED_GUESTS=false` turns them off.
   - **Settings → Account**: change your password, sign out of your other devices, delete your account and everything in it.
   - An account menu in the header with who is signed in, a link to the account settings, and sign out.
   - The sign-in and registration pages are in all four languages, work with a keyboard and screen reader (errors are announced and take focus), and pass the accessibility checks. `npm run a11y` now signs in as `guest1` and also checks them.
 - `npm run claim-data -- <username>` gives data saved before accounts existed to an empty account.
-- `npm test`: unit tests for password hashing, usernames, cookies, rate limiting and the OAuth helpers.
-- Environment variables `APP_URL`, `TRUST_PROXY`, `SEED_GUESTS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
+- `npm test`: unit tests for password hashing, usernames, cookies, rate limiting, PKCE and token signing and checking.
+- Environment variables `APP_URL`, `TRUST_PROXY`, `SEED_GUESTS`, `OAUTH_SIGNING_KEY`, `OAUTH_ACCESS_TTL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
 
 ### Security
 
-- Passwords are hashed with scrypt. Sessions are random tokens in an `HttpOnly`, `SameSite=Lax` (and `Secure` over HTTPS) cookie; only a hash of the token is stored. Signing out ends the session on the server; changing the password ends the other sessions.
-- Failed sign-ins, registrations and password confirmations are rate limited. A wrong password and an unknown username give the same answer in the same time.
-- Browser requests that change data from another site are refused. The server sends a Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, a referrer policy and HSTS over HTTPS, and account and data responses are `no-store`.
+- Passwords are hashed with scrypt. Refresh tokens and authorization codes are random and only their hashes are stored. A code works once for a minute; replaying one revokes what it produced.
+- The refresh token is never exposed to JavaScript (not in a response body, storage or `document.cookie`), so a cross-site-scripting bug can't steal the long-lived credential; the page also runs under a strict Content-Security-Policy. Only a harmless "signed in" flag is kept in `localStorage`.
+- Refresh tokens rotate, and a retired one being used again revokes the whole sign-in. Signing out, signing out of other devices and changing the password revoke refresh tokens on the server. Access tokens can't be recalled, so they are kept to 15 minutes, and the account is looked up on each request so a deleted account stops at once.
+- Only the authorization code flow with S256 PKCE is offered: no implicit flow, no password grant. Redirect addresses must match exactly, and a bad client or address is shown an error rather than redirected to.
+- Failed sign-ins, registrations, token requests and password confirmations are rate limited. A wrong password and an unknown username give the same answer in the same time.
+- Browser requests that change data from another site are refused. The server sends a Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, a referrer policy and HSTS over HTTPS, and account, token and data responses are `no-store`.
+- **NoSQL operator injection** (the app is MongoDB, so there is no SQL): an audit of every query found none exploitable, because each handler validates its input, but nothing enforced that. Now a request with an operator or path as a field name (`$ne`, `a.b`, `a[$gt]`, `__proto__`) is refused with a `400` before any route runs, and Mongoose's `sanitizeFilter` makes an operator that reaches a query anyway a literal value (filters the app writes itself are marked `trusted()`). `npm run security` sends about 840 injection payloads at every endpoint, including login, the token endpoints and the backup import.
+- `POST /api/expenses` refuses a `description` that isn't text instead of silently dropping it.
 - Google and GitHub accounts are matched by the provider's account id, never by email, so registering with someone's address can't take over their account.
 
 ### Changed
 
-- **Breaking:** the API now needs a signed-in session. Outside demo mode there is no longer a single shared dataset: data saved before accounts existed has no owner until it is claimed with `npm run claim-data`.
+- **Breaking:** the API now needs an access token. Outside demo mode there is no longer a single shared dataset: data saved before accounts existed has no owner until it is claimed with `npm run claim-data`.
 - In demo mode, visitors can still use a private anonymous sandbox through **Try the demo without an account**; signing in is the alternative.
 - Signing out returns to the sign-in page, and the next person to sign in starts on the dashboard.
-- `POST /api/rates/refresh` needs a session; `GET /api/rates` stays open so the sign-in page can load.
+- `POST /api/rates/refresh` needs an access token; `GET /api/rates` stays open so the sign-in page can load.
 - The theme script moved from `index.html` to `public/theme-init.js`, so the Content-Security-Policy can forbid inline scripts.
+- The Vite dev proxy no longer rewrites the `Host` header (`changeOrigin: false`), because the OAuth redirect address and token issuer are worked out from it, and also proxies `/.well-known`.
 - `render.yaml` sets `TRUST_PROXY=1` and asks for `APP_URL`.
 
 ## [0.8.0] - 2026-10-28

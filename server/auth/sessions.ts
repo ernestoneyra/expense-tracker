@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { Request, Response } from 'express'
-import type { Types } from 'mongoose'
+import { trusted, type Types } from 'mongoose'
 import { Session } from '../models/Session.ts'
 import { User, type UserDoc } from '../models/User.ts'
 import { clearCookie, cookiesOf, setCookie } from './cookies.ts'
@@ -19,9 +19,12 @@ const REFRESH_AFTER = HOUR
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 
+/** Who a sign-in cookie belongs to. This is the authorization server's own record of a signed-in person. */
 export interface Authenticated {
   user: UserDoc
   sessionId: Types.ObjectId
+  /** Whether they asked to stay signed in. */
+  persistent: boolean
 }
 
 function writeCookie(req: Request, res: Response, token: string, persistent: boolean, expiresAt: Date) {
@@ -75,7 +78,14 @@ export async function authenticate(req: Request, res: Response): Promise<Authent
     await session.save()
     writeCookie(req, res, token, session.persistent, session.expiresAt)
   }
-  return { user, sessionId: session._id }
+  return { user, sessionId: session._id, persistent: session.persistent }
+}
+
+/** The id of the session the request's cookie belongs to, if it has a valid one. */
+export async function currentSessionId(req: Request): Promise<Types.ObjectId | undefined> {
+  const token = cookiesOf(req)[SESSION_COOKIE]
+  if (!token) return undefined
+  return (await Session.findOne({ tokenHash: hashToken(token) }).select('_id'))?._id
 }
 
 export async function endSession(req: Request, res: Response) {
@@ -84,6 +94,6 @@ export async function endSession(req: Request, res: Response) {
   clearCookie(req, res, SESSION_COOKIE)
 }
 
-/** Signs a user out everywhere except the browser making this request (`keep`). */
-export const endOtherSessions = (userId: Types.ObjectId, keep: Types.ObjectId) =>
-  Session.deleteMany({ userId, _id: { $ne: keep } })
+/** Ends every sign-in cookie of a user except the one making this request (`keep`, if it has one). */
+export const endOtherSessions = (userId: Types.ObjectId, keep?: Types.ObjectId) =>
+  Session.deleteMany(keep ? { userId, _id: trusted({ $ne: keep }) } : { userId })

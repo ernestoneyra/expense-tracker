@@ -5,6 +5,8 @@ import mongoose from 'mongoose'
 import { loadAuth, noStore, requireScope, sameOriginOnly, securityHeaders } from './auth/middleware.ts'
 import { seedGuests } from './auth/seed.ts'
 import { connectDb } from './db.ts'
+import { initSigningKey } from './oauth/keys.ts'
+import { AuthCode } from './models/AuthCode.ts'
 import { Budget } from './models/Budget.ts'
 import { Category } from './models/Category.ts'
 import { CategoryBudget } from './models/CategoryBudget.ts'
@@ -13,9 +15,12 @@ import { Expense } from './models/Expense.ts'
 import { Goal } from './models/Goal.ts'
 import { Income } from './models/Income.ts'
 import { Recurring } from './models/Recurring.ts'
+import { RefreshToken } from './models/RefreshToken.ts'
 import { Session } from './models/Session.ts'
+import { SigningKey } from './models/SigningKey.ts'
 import { User } from './models/User.ts'
 import { authRouter } from './routes/auth.ts'
+import { discoveryRouter, oauthRouter } from './routes/oauth.ts'
 import { budgetRouter } from './routes/budget.ts'
 import { categoriesRouter } from './routes/categories.ts'
 import { dataRouter } from './routes/data.ts'
@@ -28,6 +33,7 @@ import { recurringRouter } from './routes/recurring.ts'
 import { reportsRouter } from './routes/reports.ts'
 import { recurringMiddleware } from './recurring.ts'
 import { RatesUnavailableError } from './rates.ts'
+import { rejectOperatorKeys } from './security.ts'
 import { sandboxRouter } from './routes/sandbox.ts'
 import { summaryRouter } from './routes/summary.ts'
 import { DEMO_MODE, startSandboxCleanup } from './sandbox.ts'
@@ -48,14 +54,22 @@ app.use('/api', sameOriginOnly)
 // every other route keeps the default limit.
 app.use('/api/data', loadAuth, requireScope, express.json({ limit: '10mb' }))
 app.use(express.json())
+// The token endpoint takes a form post (RFC 6749 §4.1.3).
+app.use('/api/oauth', express.urlencoded({ extended: false, limit: '10kb' }))
+// Nothing below sees a body or query with an operator or a path where a field name should be.
+app.use('/api', rejectOperatorKeys)
 
 app.get('/api/health', noStore, (_req, res) => {
   const connected = mongoose.connection.readyState === 1
   res.status(connected ? 200 : 503).json({ ok: connected, db: mongoose.connection.name, demo: DEMO_MODE })
 })
 
-app.use('/api', loadAuth)
+// The authorization server and sign-in answer to cookies and form posts, not to an access token (which
+// is what they hand out), so they come before the check for one.
+app.use('/api/oauth', oauthRouter)
+app.use(discoveryRouter)
 app.use('/api/auth', authRouter)
+app.use('/api', loadAuth)
 // Exchange rates are the same for everyone, so reading them needs no account (the app loads them
 // before anyone has signed in). Asking the provider for fresh ones does.
 app.use('/api/rates', (req, res, next) => (req.method === 'GET' ? next() : requireScope(req, res, next)), ratesRouter)
@@ -127,8 +141,11 @@ try {
   // Drop indexes the schemas no longer define, e.g. the old global-unique category name, which
   // would otherwise stop two sandboxes from having a category with the same name.
   await Promise.all(
-    [Budget, Category, CategoryBudget, Debt, Expense, Goal, Income, Recurring, User, Session].map((m) => m.syncIndexes()),
+    [Budget, Category, CategoryBudget, Debt, Expense, Goal, Income, Recurring, User, Session, AuthCode, RefreshToken, SigningKey].map(
+      (m) => m.syncIndexes(),
+    ),
   )
+  await initSigningKey()
   await seedGuests()
 } catch (err) {
   console.error('Failed to connect to MongoDB:', err instanceof Error ? err.message : err)

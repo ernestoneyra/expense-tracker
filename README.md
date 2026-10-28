@@ -103,7 +103,9 @@ None of the new features ship with sample amounts: income, category limits, goal
    | `PORT`          | no       | Port for the API server. Defaults to `5181`; Vite proxies `/api` to it.                              |
    | `DEMO_MODE`     | no       | `true` turns on per-visitor demo sandboxes (see [below](#how-the-demo-sandboxes-work)). Leave it unset for development and personal use. |
    | `DNS_SERVERS`   | no       | Comma-separated DNS servers for Node, e.g. `8.8.8.8,1.1.1.1`. See [Troubleshooting](#troubleshooting). |
-   | `APP_URL`       | in production | The public address of the app, e.g. `https://expenser.example.com`. Used for the redirect address of Google and GitHub sign-in. |
+   | `APP_URL`       | in production | The public address of the app, e.g. `https://expenser.example.com`. Where the app is reached from: the token issuer, and the base of the Google and GitHub redirect addresses. Without it the address of each request is used. |
+   | `OAUTH_SIGNING_KEY` | production | The key access tokens are signed with; see [Accounts and sign-in](#accounts-and-sign-in). Without it one is created and kept in the database. |
+   | `OAUTH_ACCESS_TTL` | no   | How long an access token lasts, in seconds. Default `900`. |
    | `TRUST_PROXY`   | behind a proxy | Number of reverse proxies in front of the server (`1` on Render). Without it the sign-in rate limits see every visitor as the proxy. |
    | `SEED_GUESTS`   | no       | `false` stops the shared `guest1` and `guest2` accounts being created. Set it for a deployment with real users. |
    | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | no | Turn on "Continue with Google" / "Continue with GitHub". See [Accounts and sign-in](#accounts-and-sign-in). |
@@ -128,11 +130,34 @@ None of the new features ship with sample amounts: income, category limits, goal
 
 **Passwords.** Hashed with scrypt (32 MiB, per-password salt, the cost stored with each hash) and never logged or sent back. New passwords need 8 to 128 characters. There are no rules about symbols or digits, which is current NIST guidance. Signing in with an unknown username takes as long as a wrong password, and both give the same message.
 
-**Sessions.** A successful sign-in sets one cookie holding a random token. It is `HttpOnly` (scripts can't read it), `SameSite=Lax` and `Secure` over HTTPS, and only its SHA-256 is stored in the database, so a copy of the database can't be used to sign in. "Keep me signed in" lasts 30 days from the last visit; without it a session lasts a day and the cookie ends with the browser. No session lasts longer than 90 days. Each sign-in gets a new token, signing out deletes it on the server, and changing the password signs out every other device. This is the pattern the IETF recommends for a web app served from its own domain: tokens stay on the server, so there is nothing for a script in the page to steal.
+**The OAuth server.** The app runs its own [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) authorization server and is also the resource server: the API only answers to an access token it issued. The web app is its one client (`expenser-web`, a public client). Signing in works like this:
 
-**Abuse.** Failed sign-ins are limited per address and per address-and-username, registrations per address, and password-confirmation attempts per account. The limits are held in memory, so with several server instances each has its own count. A request that changes data and comes from another site is refused, on top of `SameSite`. The server sends a strict Content-Security-Policy, `nosniff`, `X-Frame-Options: DENY` and HSTS over HTTPS, and every response about an account or data is `no-store`.
+1. The person proves who they are with a username and password (or Google / GitHub, below). The server leaves a sign-in cookie, which only the authorization server looks at.
+2. The app sends the browser to `GET /api/oauth/authorize` with a [PKCE](https://datatracker.ietf.org/doc/html/rfc7636) challenge and a `state`. The server sees the cookie, and sends the browser back to `/auth/callback` with a one-time `code`.
+3. The app posts the code and its PKCE secret to `POST /api/oauth/token` and gets an **access token** in the response. The **refresh token** arrives in an `HttpOnly` cookie instead, so no script on the page can ever read it.
+4. Every API call carries `Authorization: Bearer <access token>`. The cookie is never accepted by the API, so a cross-site request can't ride on it.
 
-**Google and GitHub.** [OAuth 2.0 authorization code flow](https://datatracker.ietf.org/doc/html/rfc6749) with [PKCE](https://datatracker.ietf.org/doc/html/rfc7636) and a `state` check. The code is exchanged on the server using the client secret, so no provider token ever reaches the browser. A provider appears on the sign-in page once both its variables are set:
+Only the authorization code flow with S256 PKCE is offered: no implicit flow, no password grant. A code works once, for a minute. Redirect addresses must match exactly, and an unknown client or address is shown an error instead of being redirected.
+
+**Tokens.**
+
+| | What it is | Lifetime | Kept |
+| - | - | - | - |
+| Access token | A signed JWT ([RFC 9068](https://datatracker.ietf.org/doc/html/rfc9068), Ed25519), checked on every request without a database lookup of the token itself. | 15 minutes (`OAUTH_ACCESS_TTL`, in seconds) | In the page's memory only |
+| Refresh token | A random single-use secret; only its SHA-256 is stored on the server. | 30 days after last use with "keep me signed in", otherwise until the browser closes; never more than 90 days after sign-in | In an `HttpOnly`, `SameSite=Strict` cookie that is only sent to `/api/oauth/*`. The page never handles it |
+
+Refresh tokens **rotate**: every refresh retires the old one and issues a new one. If a retired token is ever used again (it was copied), the whole sign-in is revoked, the thief's and the owner's alike, and the owner signs in again. Two tabs refreshing at once are tolerated for 10 seconds, so ordinary use doesn't trigger that. Replaying a used authorization code revokes what it produced, too. Signing out revokes the refresh token on the server; "Sign out of other devices" and changing the password revoke every other sign-in. Because an access token is stateless it can't be taken back, so it works until it expires (at most 15 minutes), except that the account is looked up on each request, so deleting an account ends its tokens at once.
+
+**Cross-site scripting.** The refresh token is the long-lived credential, so it is kept out of JavaScript's reach: it is never in a response body, in storage, or in `document.cookie`, and the browser attaches it to the token request by itself. A script injected into the page therefore can't take it away and use it later or elsewhere. What it can still do is act while the page is open: it can make same-origin requests, including asking the token endpoint for an access token (which it then holds for at most 15 minutes), because the browser sends the cookie with them. No design for a web app removes that, so the page also runs under a strict Content-Security-Policy with no inline scripts, no third-party code and no `eval`, to make an injection hard in the first place. The cookie is `SameSite=Strict` and the server also refuses cross-site requests that change something, so another site can't use it. Only a flag saying you were signed in (`expenser.signed-in`) is kept in `localStorage`, so the app knows whether a refresh is worth trying; it isn't a credential.
+
+**Signing keys.** Access tokens are signed with an Ed25519 key. By default the server creates one on first start and keeps it in the database, so every instance agrees. For production, set `OAUTH_SIGNING_KEY` to an Ed25519 private key in PKCS#8 PEM form so the key stays out of database backups. Make one with `node -e "console.log(require('crypto').generateKeyPairSync('ed25519').privateKey.export({type:'pkcs8',format:'pem'}))"` and paste all of it as the value (hosting dashboards take the line breaks; in a `.env` file write each one as `
+`). Changing the key signs everyone out of their access tokens (refresh tokens still work). The public key is at `GET /api/oauth/jwks` and the server's settings at `GET /.well-known/oauth-authorization-server` ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)).
+
+**Other apps.** Only the web app can get tokens today. Adding another client means adding it in [server/oauth/clients.ts](server/oauth/clients.ts), a consent screen in `/authorize` for it (the web app skips consent because it is the same app), and, if it can keep a secret, client authentication at the token endpoint. A client that isn't a browser sets `refreshTokenInCookie: false` and gets its refresh token in the response body, which is what a program with no cookie jar needs.
+
+**Abuse.** Failed sign-ins are limited per address and per address-and-username, registrations per address, failed token requests per address, and password-confirmation attempts per account. The limits are held in memory, so with several server instances each has its own count. A browser request that changes something and comes from another site is refused. The server sends a strict Content-Security-Policy, `nosniff`, `X-Frame-Options: DENY` and HSTS over HTTPS, and every response about an account or data is `no-store`.
+
+**Google and GitHub.** An optional second way to prove who you are in step 1 above; the app's own tokens are issued either way. Here this server is the OAuth *client*: it uses the authorization code flow with PKCE and a `state` check, and exchanges the code on the server using the client secret, so no Google or GitHub token ever reaches the browser. A provider appears on the sign-in page once both its variables are set:
 
 | Provider | Create the app at | Redirect URI to register |
 | -------- | ----------------- | ------------------------ |
@@ -140,6 +165,14 @@ None of the new features ship with sample amounts: income, category limits, goal
 | GitHub   | [GitHub → Settings → Developer settings → OAuth Apps](https://github.com/settings/developers) | `<APP_URL>/api/auth/oauth/github/callback` |
 
 In development `<APP_URL>` is the Vite address, `http://localhost:5180`. An account is matched by the provider's own account id, **never by email**: matching by email would let anyone who registers with someone else's address take over that person's account. The first time someone signs in with a provider a new account is made, with a username taken from their name. Provider accounts have no password.
+
+**Injection.** The app has no SQL: it stores data in MongoDB, so the injection to guard against is *operator injection*. A client that sends `{"username": {"$ne": null}}` where text is expected can turn "equals this" into "is anything" if the value reaches a query as it arrived. Three layers stop it, so that one handler getting it wrong isn't enough:
+
+1. **The edge.** Every request body and query string is checked before a route runs ([server/security.ts](server/security.ts)). A field name that is an operator or a path (`$ne`, `a.b`, `a[$gt]`, `__proto__`), or nesting more than 20 levels deep, gets a `400`. Values are untouched, so a title like "$5 lunch" is fine.
+2. **The query layer.** Mongoose runs with `sanitizeFilter` ([server/db.ts](server/db.ts)): an operator object inside a query filter is treated as a literal value and fails to cast, and `$where` is refused. The few filters the app writes itself that do use an operator are marked `trusted({ … })`, and only ever with values the server built.
+3. **The handlers.** Each checks the type of what it uses (`typeof … === 'string'`, whole-number checks, `BUDGET_METHODS.includes`), and only named fields are copied from a body, so an extra `sandbox` or `_id` key can't redirect data into another account. Aggregation pipelines never include request text.
+
+`npm run security` ([scripts/security/nosql-probe.mjs](scripts/security/nosql-probe.mjs)) checks all this against a running app with about 840 payloads, and it was itself tested by switching the defences off and confirming it fails.
 
 **The demo accounts.** `guest1` and `guest2` are created once and never reset, so what people add to them stays until someone clears it. They can't be deleted and their password can't be changed. Their password is public, so for a deployment with real users set `SEED_GUESTS=false`.
 
@@ -183,8 +216,9 @@ In demo mode the sign-in page also offers **Try the demo without an account**. T
 | `npm run preview` | Serves the production build locally (the API server must also run). |
 | `npm start`       | Runs the API server, which also serves `dist/` if it has been built.  |
 | `npm run lint`    | Runs ESLint.                                                         |
-| `npm test`        | Unit tests for password hashing, usernames, cookies, rate limiting and the OAuth helpers (no database needed). |
+| `npm test`        | Unit tests for password hashing, usernames, cookies, rate limiting, PKCE and token signing and checking (no database needed). |
 | `npm run claim-data -- <username>` | Gives data saved before accounts existed to an empty account. |
+| `npm run security` | Sends NoSQL-injection payloads at every endpoint of a running app and fails if any is accepted, causes a server error, leaks or changes another account's data; see [Injection](#injection). |
 | `npm run a11y`    | Checks accessibility (colour contrast, axe-core WCAG rules, keyboard behaviour) against a running app; see [Accessibility checks](#accessibility-checks). |
 
 ## Accessibility checks
@@ -207,18 +241,19 @@ server/
   db.ts             MongoDB connection
   sandbox.ts        Who a piece of data belongs to (an account or a demo sandbox): scope, seeding, reset, cleanup
   demo.ts           Default categories and demo expenses
-  auth/             Passwords (scrypt), sessions, cookies, rate limiting, OAuth, security headers, demo accounts; tests alongside
+  auth/             Passwords (scrypt), the sign-in cookie, rate limiting, sign-in with Google / GitHub, security headers, demo accounts; tests alongside
+  oauth/            The authorization server: client registry, Ed25519 signing key, JWT access tokens, refresh-token rotation
   claimLegacyData.ts  `npm run claim-data`: gives pre-accounts data to an account
   rates.ts          Supported currencies, exchange-rate fetching/caching, conversion
   money.ts          Currency conversion and month helpers shared by the routes
   planning.ts       Month overview, goal and debt progress, category limits vs spending
   recurring.ts      Turns due recurring items into expenses / income
   debtPlan.ts       Avalanche and snowball payoff simulation
-  models/           Mongoose models: User, Session, Expense, Income, Category, CategoryBudget, Budget, Goal, Debt, Recurring
-  routes/           API routes: auth, expenses, income, categories, budget, summary, goals, debts, recurring, reports, rates, data, sandbox
+  models/           Mongoose models: User, Session, AuthCode, RefreshToken, SigningKey, Expense, Income, Category, CategoryBudget, Budget, Goal, Debt, Recurring
+  routes/           API routes: auth, oauth, expenses, income, categories, budget, summary, goals, debts, recurring, reports, rates, data, sandbox
 src/
   App.tsx           Shows the sign-in page, or the app once someone is signed in
-  auth/             Sign-in state (AuthProvider, useAuth) and the server's error codes
+  auth/             Sign-in state (AuthProvider, useAuth), the OAuth client (tokens.ts: PKCE, refresh) and the server's error codes
   pages/            Auth (sign in / register), Dashboard, Expenses, Income, Categories, Budgets (and budgets/ method panels), Recurring, Goals, Debts, Reports, Settings (and settings/AccountCard), Help
   components/       Layout (sidebar, header) and shared UI components
   config/           Navigation items and the icon for each default category
@@ -233,19 +268,24 @@ docs/               Screenshots and the accessibility statement
 
 ## API
 
-All routes are under `/api`. Every request except `/api/health`, `/api/auth/*` and `GET /api/rates` needs a signed-in session (the cookie set by `/api/auth/login` or `/register`), and the data you read and write belongs to that account; without one the API answers `401` with `{ "error": "...", "code": "unauthorized" }`. In demo mode only, a request without a session may send an `X-Sandbox-Id` header containing a UUID instead, and its data belongs to that id (see [How the demo sandboxes work](#how-the-demo-sandboxes-work)). A browser request that changes something and comes from another site gets `403`. Amounts are integers in minor units (cents), i.e. the displayed value × 100 — including for JPY.
+All routes are under `/api`. Every request except `/api/health`, `/api/auth/*`, `/api/oauth/*` and `GET /api/rates` needs an access token (`Authorization: Bearer …`, from [the OAuth server](#accounts-and-sign-in)), and the data you read and write belongs to that account. Without a token the API answers `401` with `{ "error": "...", "code": "unauthorized" }`; with one that is bad or expired, `401` with `"code": "invalid_token"` and a `WWW-Authenticate` header, which is the cue to refresh it. In demo mode only, a request without a token may send an `X-Sandbox-Id` header containing a UUID instead, and its data belongs to that id (see [How the demo sandboxes work](#how-the-demo-sandboxes-work)). A browser request that changes something and comes from another site gets `403`. Amounts are integers in minor units (cents), i.e. the displayed value × 100 — including for JPY.
 
 | Method & path             | Description                                                                                         |
 | ------------------------- | --------------------------------------------------------------------------------------------------- |
 | `GET /api/health`         | `200` when connected to MongoDB, otherwise `503`. Includes `demo`, whether demo mode is on.         |
-| `GET /api/auth/session`   | Always `200`: `user` (or `null` if nobody is signed in), the `providers` that are set up, and `demo`. |
-| `POST /api/auth/register` | Create an account and sign in: `username` (3–30 letters, numbers, `.` `-` `_`), `password` (8–128 characters), `remember?`. `400` with a `code` (`username_invalid`, `username_reserved`, `password_short`, `password_long`, `password_username`), `409` `username_taken`, `429` `too_many_attempts`. |
-| `POST /api/auth/login`    | Sign in: `username` (any case), `password`, `remember?`. `401` `invalid_credentials` for a wrong password or unknown user alike; `429` after too many failures (with `Retry-After`). |
-| `POST /api/auth/logout`   | End this session. `204`.                                                                            |
-| `POST /api/auth/logout-others` | End every other session of the account. `204`.                                                 |
-| `POST /api/auth/password` | Change the password: `currentPassword`, `newPassword`. Ends the other sessions. Not for the demo accounts or accounts without a password. |
-| `DELETE /api/auth/account` | Delete the account and all its data: `password`, or for a Google / GitHub account `confirm` set to the username. Not for the demo accounts. |
+| `GET /api/auth/session`   | Looks at the sign-in cookie. Always `200`: `user` (or `null` if nobody is signed in), the `providers` that are set up, and `demo`. |
+| `GET /api/auth/me`        | Needs an access token. The signed-in `user`.                                                       |
+| `POST /api/auth/register` | Create an account and leave the sign-in cookie (tokens come from `/api/oauth/authorize` and `/token`): `username` (3–30 letters, numbers, `.` `-` `_`), `password` (8–128 characters), `remember?`. `400` with a `code` (`username_invalid`, `username_reserved`, `password_short`, `password_long`, `password_username`), `409` `username_taken`, `429` `too_many_attempts`. |
+| `POST /api/auth/login`    | Check the password and leave the sign-in cookie: `username` (any case), `password`, `remember?`. `401` `invalid_credentials` for a wrong password or unknown user alike; `429` after too many failures (with `Retry-After`). |
+| `POST /api/auth/logout`   | End the sign-in cookie and drop the refresh cookie. `204`. (The app also revokes the refresh token on the server first, via `/api/oauth/revoke`.) |
+| `POST /api/auth/logout-others` | Needs an access token. Revoke every other sign-in of the account: refresh tokens and cookies. `204`. |
+| `POST /api/auth/password` | Needs an access token. Change the password: `currentPassword`, `newPassword`. Revokes the other sign-ins. Not for the demo accounts or accounts without a password. |
+| `DELETE /api/auth/account` | Needs an access token. Delete the account and all its data: `password`, or for a Google / GitHub account `confirm` set to the username. Not for the demo accounts. |
 | `GET /api/auth/oauth/:provider/start`, `GET /api/auth/oauth/:provider/callback` | The two halves of Google / GitHub sign-in (`google`, `github`). They redirect, and a failure sends the browser back to `/?auth_error=…`. |
+| `GET /api/oauth/authorize` | OAuth 2.0 authorization endpoint: `response_type=code`, `client_id=expenser-web`, `redirect_uri`, `state`, `code_challenge`, `code_challenge_method=S256`, `scope?` (`api`). Redirects to the redirect address with `code` and `state`, or with `error=login_required` if nobody is signed in. |
+| `POST /api/oauth/token`   | Token endpoint (form-encoded). `grant_type=authorization_code` with `code`, `redirect_uri`, `code_verifier`; or `grant_type=refresh_token` (the refresh token is read from the `expenser_refresh` cookie, and anything in the body is ignored); both with `client_id`. Returns `access_token`, `token_type`, `expires_in`, `scope`, and sets the new refresh cookie. Errors are `{ error, error_description }` as RFC 6749 §5.2 describes. |
+| `POST /api/oauth/revoke`  | Revoke the refresh token (RFC 7009) and drop its cookie. `client_id`; the token comes from the cookie. Always `200`. |
+| `GET /api/oauth/jwks`, `GET /.well-known/oauth-authorization-server` | The public signing key, and the server's endpoints and capabilities (RFC 8414). |
 | `GET /api/expenses`       | Latest expenses, newest first. Optional `limit` (default 200, max 500).                             |
 | `POST /api/expenses`      | Create an expense (max 500 per sandbox in demo mode): `title`, `category` (must exist), `date`, `amountCents`, `currency`, `description?`. |
 | `DELETE /api/expenses/:id`| Delete an expense.                                                                                  |
@@ -273,7 +313,7 @@ All routes are under `/api`. Every request except `/api/health`, `/api/auth/*` a
 | `GET /api/summary`        | Dashboard figures for the current month, converted into the `currency` query parameter (default `USD`). |
 | `POST /api/sandbox/reset` | Demo mode only: replace the sandbox's data with a fresh copy of the demo data.                      |
 | `GET /api/rates`          | Current exchange rates (base `USD`), when the provider dated them (`updatedAt`), when this server last fetched them (`fetchedAt`) and whether the provider was unreachable on the latest try so an older copy is used (`stale`). |
-| `POST /api/rates/refresh` | Fetch the rates again now (at most once a minute; within that time the current ones are returned). Same response as `GET /api/rates`. Needs a session. |
+| `POST /api/rates/refresh` | Fetch the rates again now (at most once a minute; within that time the current ones are returned). Same response as `GET /api/rates`. Needs an access token. |
 | `GET /api/data/export`    | Everything in the current dataset as one JSON backup (`app: "expenser"`, `version`, budget, categories, expenses, income, category limits, goals, debts, recurring). |
 | `GET /api/data/export/expenses.csv`, `GET /api/data/export/income.csv` | The expenses or the income as CSV (UTF-8 with a byte-order mark; amounts in major units, text that starts like a formula is prefixed with `'`). |
 | `POST /api/data/import`   | Replace the current data with a backup in the format above. Every row is validated first; a bad file returns `400` and changes nothing. In demo mode the usual caps apply. |

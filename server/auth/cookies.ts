@@ -26,9 +26,11 @@ interface CookieOptions {
   /** Seconds; omit for a cookie that ends with the browser session. */
   maxAge?: number
   path?: string
+  /** Lax is for the sign-in cookie, which must survive coming back from Google or GitHub; Strict is never sent cross-site at all. */
+  sameSite?: 'Lax' | 'Strict'
 }
 
-/** Always HttpOnly (scripts can't read it) and SameSite=Lax (not sent with cross-site POSTs). */
+/** Always HttpOnly, so scripts can't read it, and never sent with a cross-site POST. */
 export function setCookie(req: Request, res: Response, name: string, value: string, options: CookieOptions = {}) {
   res.append(
     'Set-Cookie',
@@ -36,13 +38,13 @@ export function setCookie(req: Request, res: Response, name: string, value: stri
       `${name}=${encodeURIComponent(value)}`,
       `Path=${options.path ?? '/'}`,
       'HttpOnly',
-      'SameSite=Lax',
+      `SameSite=${options.sameSite ?? 'Lax'}`,
       ...(isSecure(req) ? ['Secure'] : []),
       ...(options.maxAge === undefined ? [] : [`Max-Age=${Math.floor(options.maxAge)}`]),
     ].join('; '),
   )
 }
 
-export function clearCookie(req: Request, res: Response, name: string, path = '/') {
-  setCookie(req, res, name, '', { maxAge: 0, path })
+export function clearCookie(req: Request, res: Response, name: string, path = '/', sameSite?: 'Lax' | 'Strict') {
+  setCookie(req, res, name, '', { maxAge: 0, path, sameSite })
 }

@@ -1,7 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
 import { DEMO_MODE, accountScope, sandboxMiddleware } from '../sandbox.ts'
-import type { UserDoc } from '../models/User.ts'
-import { authenticate, type Authenticated } from './sessions.ts'
+import { User, type UserDoc } from '../models/User.ts'
+import { verifyAccessToken } from '../oauth/jwt.ts'
+import { baseUrl } from './url.ts'
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -65,13 +66,40 @@ const safeHost = (origin: string) => {
   }
 }
 
-/** Looks up who is signed in and leaves the result in `res.locals.auth`; never rejects the request. */
+/** Who an access token says is calling, once the user is confirmed to still exist. */
+export interface BearerAuth {
+  user: UserDoc
+  /** The sign-in this token belongs to (its refresh-token family). */
+  familyId: string
+}
+
+const invalidToken = (res: Response) => {
+  res.set('WWW-Authenticate', 'Bearer error="invalid_token"')
+  res.status(401).json({ error: 'The access token is not valid or has expired', code: 'invalid_token' })
+}
+
+/**
+ * Checks the `Authorization: Bearer` access token, if there is one, and leaves who it is in
+ * `res.locals.auth`. A request with no token goes on as nobody (a later step decides if that is
+ * allowed); one with a bad or expired token is turned away, so the app knows to refresh it.
+ */
 export const loadAuth: RequestHandler = async (req, res, next) => {
-  res.locals.auth ??= await authenticate(req, res)
+  if (res.locals.auth !== undefined) return next()
+  const header = req.get('authorization')
+  if (!header) {
+    res.locals.auth = null
+    return next()
+  }
+  const token = /^Bearer ([A-Za-z0-9._-]+)$/.exec(header)?.[1]
+  const claims = token && verifyAccessToken(token, baseUrl(req))
+  // Looked up every time, so a deleted account's tokens stop working at once rather than when they expire.
+  const user = claims && (await User.findById(claims.sub).select('+passwordHash'))
+  if (!claims || !user) return invalidToken(res)
+  res.locals.auth = { user, familyId: claims.fid } satisfies BearerAuth
   next()
 }
 
-export const authOf = (res: Response): Authenticated | null => res.locals.auth ?? null
+export const authOf = (res: Response): BearerAuth | null => res.locals.auth ?? null
 
 export function requireUser(_req: Request, res: Response, next: NextFunction) {
   if (!authOf(res)) {
@@ -82,8 +110,8 @@ export function requireUser(_req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Everything below this answers for one person's data. A signed-in person gets their own account's
- * data. In a hosted demo, someone who hasn't signed in can use a private demo sandbox instead.
+ * Everything below this answers for one person's data. Someone with a valid access token gets their
+ * own account's data. In a hosted demo, someone without one can use a private demo sandbox instead.
  * Everyone else is turned away.
  */
 export const requireScope: RequestHandler = async (req, res, next) => {

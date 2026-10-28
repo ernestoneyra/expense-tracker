@@ -1,5 +1,5 @@
 import type { RequestHandler, Response } from 'express'
-import { model, Schema } from 'mongoose'
+import { model, Schema, trusted } from 'mongoose'
 import { DEFAULT_CATEGORIES, DEMO_BUDGET, demoExpenses } from './demo.ts'
 import { Budget } from './models/Budget.ts'
 import { Category } from './models/Category.ts'
@@ -41,7 +41,7 @@ const creating = new Map<string, Promise<void>>()
 
 /** Deletes everything stored for a sandbox (or several), or the single dataset outside demo mode (`null`). */
 export async function wipe(sandbox: string | string[] | null) {
-  const filter = Array.isArray(sandbox) ? { sandbox: { $in: sandbox } } : { sandbox }
+  const filter = Array.isArray(sandbox) ? { sandbox: trusted({ $in: sandbox }) } : { sandbox }
   await Promise.all([
     Expense.deleteMany(filter),
     Category.deleteMany(filter),
@@ -133,11 +133,11 @@ export async function resetSandbox(id: string) {
 
 async function deleteStaleSandboxes() {
   const cutoff = new Date(Date.now() - RETENTION_MS)
-  const stale = (await Sandbox.distinct('_id', { lastSeenAt: { $lt: cutoff } })) as string[]
+  const stale = (await Sandbox.distinct('_id', { lastSeenAt: trusted({ $lt: cutoff }) })) as string[]
   if (stale.length === 0) return
   // Data first: a crash in between leaves an empty sandbox rather than data nobody can reach.
   await wipe(stale)
-  await Sandbox.deleteMany({ _id: { $in: stale } })
+  await Sandbox.deleteMany({ _id: trusted({ $in: stale }) })
   for (const id of stale) lastTouched.delete(id)
   console.log(`Deleted ${stale.length} inactive sandbox(es)`)
 }

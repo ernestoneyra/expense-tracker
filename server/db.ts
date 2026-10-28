@@ -1,6 +1,13 @@
 import dns from 'node:dns'
 import mongoose from 'mongoose'
 
+// Operator injection: a client that sends {"$ne": null} where a string was expected must not be able to
+// turn "equals" into "anything" just because a handler put the value into a query as it arrived. With
+// this on, Mongoose treats any object with `$` keys inside a query filter as a literal value (it wraps
+// it in `$eq`, which then fails to cast), and refuses `$where`. A filter that really does use an
+// operator, written by us and never built from a request, says so with `trusted({ ... })`.
+mongoose.set('sanitizeFilter', true)
+
 export async function connectDb() {
   // mongodb+srv:// needs an SRV lookup; some networks/VPNs leave Node with a resolver that refuses it
   const dnsServers = process.env.DNS_SERVERS?.split(',').map((s) => s.trim()).filter(Boolean)
