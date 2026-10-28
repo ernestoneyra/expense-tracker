@@ -214,8 +214,16 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   return res
 }
 
+/** Fired after a change went through, so one live region can announce it to screen readers (4.1.3). */
+export const SAVED_EVENT = 'expenser:saved'
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await request(path, init)
+  const method = (init?.method ?? 'GET').toUpperCase()
+  // Reading data, and refreshing exchange rates, are not changes the person made to their data.
+  if (method !== 'GET' && !path.startsWith('/rates')) {
+    window.dispatchEvent(new CustomEvent(SAVED_EVENT, { detail: { method } }))
+  }
   return res.status === 204 ? (undefined as T) : res.json()
 }
 

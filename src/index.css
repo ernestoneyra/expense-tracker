@@ -1,9 +1,22 @@
 @import 'tailwindcss';
 
+/*
+ * Built to WCAG 2.2 level AAA where a stylesheet can: see docs/ACCESSIBILITY.md. The numbers in
+ * the comments are the success criteria each rule serves.
+ */
+
 /* Below this width the sidebar becomes a drawer: `max-nav:` / `nav:` variants. */
 @theme {
   --breakpoint-nav: 900px;
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* 1.4.8: lines of text are spaced at least 1.5 times the font size. */
+  --text-xs--line-height: 1.5;
+  --text-sm--line-height: 1.5;
+  --text-base--line-height: 1.5;
+  --text-lg--line-height: 1.5;
+  --text-xl--line-height: 1.5;
+  --text-2xl--line-height: 1.5;
 }
 
 /* Expose the theme tokens below as utilities: bg-surface, text-strong, border-line, ... */
@@ -11,6 +24,8 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-line: var(--border);
+  --color-field: var(--field);
+  --color-track: var(--track);
   --color-hover: var(--hover);
   --color-body: var(--text);
   --color-strong: var(--text-strong);
@@ -19,27 +34,43 @@
   --color-accent-text: var(--accent-text);
   --color-accent-soft: var(--accent-bg);
   --color-accent-contrast: var(--accent-contrast);
+  --color-danger: var(--danger);
+  --color-danger-contrast: var(--danger-contrast);
 }
 
-/* Colours are defined once with light-dark(); color-scheme picks the side. */
+/*
+ * Colours are defined once with light-dark(); color-scheme picks the side.
+ *
+ * 1.4.6: every text colour reaches 7:1 against every background it is used on (page, card, hover
+ * and the tinted "selected" background), in both themes. 1.4.11: field borders and the focus ring
+ * reach 3:1. Change a value here and re-check the pairs before shipping it.
+ */
 :root {
   --header-h: 60px;
   --sidebar-w: 240px;
+  /* 2.5.5: the smallest size of anything you can click or tap. */
+  --target: 44px;
 
   --bg: light-dark(#f5f6f8, #0e1013);
   --surface: light-dark(#ffffff, #16191e);
-  --border: light-dark(#e4e7ec, #262a31);
-  --hover: light-dark(#f0f2f5, #1e2228);
-  --text: light-dark(#525866, #a3a9b5);
+  /* Decorative separators only; use --field for the edge of something you can operate. */
+  --border: light-dark(#d9dde4, #2a2f37);
+  --field: light-dark(#6b7280, #8b93a1);
+  --track: light-dark(#d3d8e0, #3a414c);
+  --hover: light-dark(#eef0f4, #1d2228);
+  --text: light-dark(#363c48, #cbd0d9);
   --text-strong: light-dark(#0f1419, #f3f4f6);
-  --text-muted: light-dark(#868c98, #727986);
-  --accent: light-dark(#0d9467, #2bc48a);
-  --accent-text: light-dark(#0a7a54, #4ddba5);
-  --accent-bg: light-dark(rgba(13, 148, 103, 0.1), rgba(43, 196, 138, 0.14));
+  --text-muted: light-dark(#3f4654, #c0c6d0);
+  --accent: light-dark(#086140, #2bc48a);
+  --accent-text: light-dark(#055236, #5fe3b0);
+  --accent-bg: light-dark(rgba(8, 97, 64, 0.08), rgba(43, 196, 138, 0.14));
   --accent-contrast: light-dark(#ffffff, #04140d);
+  --danger: light-dark(#9c150c, #ff9088);
+  --danger-contrast: light-dark(#ffffff, #1c0805);
+  --focus: light-dark(#0a3d91, #8cbcff);
   --shadow: light-dark(0 10px 24px rgba(16, 24, 40, 0.14), 0 10px 24px rgba(0, 0, 0, 0.5));
 
-  /* Follows the system unless the theme toggle sets data-theme. */
+  /* Follows the system unless the theme setting sets data-theme. */
   color-scheme: light dark;
 }
 
@@ -52,6 +83,12 @@
 }
 
 @layer base {
+  html {
+    /* 2.4.12: a focused control is never hidden behind the sticky header when it scrolls into view. */
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+    scroll-padding-bottom: 1rem;
+  }
+
   body {
     min-width: 320px;
     background: var(--bg);
@@ -61,8 +98,50 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* 1.4.8: no more than 80 characters per line (40 for Japanese and Chinese), and paragraphs are told apart by spacing. */
+  p:not(.text-center),
+  .measure {
+    max-width: 80ch;
+  }
+  :lang(ja) :is(p:not(.text-center), .measure),
+  :lang(zh-TW) :is(p:not(.text-center), .measure) {
+    max-width: 40em;
+  }
+  p + p {
+    margin-top: 0.75em;
+  }
+
+  /* 2.4.7, 2.4.13: a thick, high-contrast ring, drawn outside the control so nothing covers it. */
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 3px solid var(--focus);
     outline-offset: 2px;
+  }
+
+  /* The skip link and the page-change focus target should not look focused to a mouse. */
+  main:focus {
+    outline: none;
+  }
+}
+
+/* 2.3.3: no motion unless the person has not asked for less of it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Windows high contrast and similar: backgrounds are replaced, so bars need an outline and system colours. */
+@media (forced-colors: active) {
+  [role='progressbar'] {
+    border: 1px solid CanvasText;
+  }
+  [role='progressbar'] > div {
+    background: Highlight;
+    forced-color-adjust: none;
   }
 }

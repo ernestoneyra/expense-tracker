@@ -1,16 +1,13 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { Button } from '../components/ui/Button.tsx'
+import { Button, DangerButton, SecondaryButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
+import { Field, inputClass } from '../components/ui/fields.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
 import { useTheme, type ThemePreference } from '../hooks/useTheme.ts'
 import { CURRENCIES, LANGUAGES, isCurrency, isLanguage, type MessageKey } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, download, useApi } from '../lib/api.ts'
-
-const inputClass = 'min-h-10 w-full rounded-[10px] border border-line bg-surface px-3 text-strong'
-const secondaryButtonClass =
-  'min-h-10 cursor-pointer rounded-[10px] border border-line px-3.5 font-semibold text-body hover:bg-hover hover:text-strong disabled:cursor-default disabled:opacity-60'
 
 const THEMES: { value: ThemePreference; label: MessageKey }[] = [
   { value: 'system', label: 'settings.themeSystem' },
@@ -25,7 +22,7 @@ type Status = { ok: boolean; text: string }
 function StatusLine({ status }: { status?: Status }) {
   if (!status) return null
   return (
-    <p className={`text-sm ${status.ok ? 'text-muted' : 'text-red-500'}`} role="status">
+    <p className={`text-sm ${status.ok ? 'text-muted' : 'text-danger'}`} role={status.ok ? 'status' : 'alert'}>
       {status.text}
     </p>
   )
@@ -145,12 +142,15 @@ export function Settings() {
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
-      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
+      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} glossary />
 
-      <Card className="p-4 nav:p-5">
+      <Card className="flex flex-col gap-3 p-4 nav:p-5" aria-labelledby="display-title">
+        <h2 id="display-title" className="font-semibold text-strong">
+          {t('settings.displayTitle')}
+        </h2>
+        <p className="text-sm text-muted">{t('settings.appliesNow')}</p>
         <div className="grid gap-4 min-[560px]:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('settings.language')}
+          <Field label={t('settings.language')}>
             <select
               value={language}
               onChange={(e) => isLanguage(e.target.value) && setLanguage(e.target.value)}
@@ -162,9 +162,8 @@ export function Settings() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('settings.theme')}
+          </Field>
+          <Field label={t('settings.theme')}>
             <select
               value={themePreference}
               onChange={(e) => isThemePreference(e.target.value) && setThemePreference(e.target.value)}
@@ -176,9 +175,8 @@ export function Settings() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('settings.currency')}
+          </Field>
+          <Field label={t('settings.currency')} hint={t('settings.currencyNote')}>
             <select
               value={currency}
               onChange={(e) => isCurrency(e.target.value) && setCurrency(e.target.value)}
@@ -190,9 +188,8 @@ export function Settings() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            {t('settings.entryCurrency')}
+          </Field>
+          <Field label={t('settings.entryCurrency')} hint={t('settings.entryCurrencyNote')}>
             <select
               value={hasEntryCurrency ? entryCurrency : ''}
               onChange={(e) => setEntryCurrency(isCurrency(e.target.value) ? e.target.value : undefined)}
@@ -205,16 +202,16 @@ export function Settings() {
                 </option>
               ))}
             </select>
-          </label>
+          </Field>
         </div>
-        <p className="pt-3 text-[13px] text-muted">{t('settings.currencyNote')}</p>
-        <p className="pt-1 text-[13px] text-muted">{t('settings.entryCurrencyNote')}</p>
       </Card>
 
-      <Card className="flex flex-col items-start gap-3 p-4 nav:p-5">
-        <h2 className="font-semibold text-strong">{t('settings.ratesTitle')}</h2>
+      <Card className="flex flex-col items-start gap-3 p-4 nav:p-5" aria-labelledby="rates-title">
+        <h2 id="rates-title" className="font-semibold text-strong">
+          {t('settings.ratesTitle')}
+        </h2>
         {ratesLoading ? (
-          <p className="text-sm text-muted">{t('common.loading')}</p>
+          <p className="text-sm text-muted" role="status">{t('common.loading')}</p>
         ) : ratesInfo ? (
           <>
             <p className="text-sm text-muted">
@@ -224,55 +221,42 @@ export function Settings() {
               })}
             </p>
             {ratesInfo.stale && (
-              <p className="text-sm text-red-500" role="status">
+              <p className="text-sm font-medium text-danger" role="status">
                 {t('settings.ratesStale')}
               </p>
             )}
           </>
         ) : (
-          <p className="text-sm text-red-500" role="status">
+          <p className="text-sm font-medium text-danger" role="status">
             {t('settings.ratesUnavailable')}
           </p>
         )}
-        <p className="text-[13px] text-muted">{t('settings.ratesNote')}</p>
-        <button type="button" onClick={refresh} disabled={refreshing} className={secondaryButtonClass}>
+        <p className="text-sm text-muted">{t('settings.ratesNote')}</p>
+        <SecondaryButton onClick={refresh} disabled={refreshing}>
           {refreshing ? t('settings.ratesRefreshing') : t('settings.ratesRefresh')}
-        </button>
+        </SecondaryButton>
         {ratesError && (
-          <p className="text-sm text-red-500" role="alert">
+          <p className="text-sm text-danger" role="alert">
             {ratesError}
           </p>
         )}
       </Card>
 
-      <Card className="flex flex-col items-start gap-3 p-4 nav:p-5">
-        <h2 className="font-semibold text-strong">{t('settings.dataTitle')}</h2>
-        <p className="text-[13px] text-muted">{t('settings.dataNote')}</p>
+      <Card className="flex flex-col items-start gap-3 p-4 nav:p-5" aria-labelledby="data-title">
+        <h2 id="data-title" className="font-semibold text-strong">
+          {t('settings.dataTitle')}
+        </h2>
+        <p className="text-sm text-muted">{t('settings.dataNote')}</p>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => downloadFile('/data/export', 'expenser-backup.json')}
-            className={secondaryButtonClass}
-          >
+          <SecondaryButton disabled={busy} onClick={() => downloadFile('/data/export', 'expenser-backup.json')}>
             {t('settings.exportBackup')}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => downloadFile('/data/export/expenses.csv', 'expenser-expenses.csv')}
-            className={secondaryButtonClass}
-          >
+          </SecondaryButton>
+          <SecondaryButton disabled={busy} onClick={() => downloadFile('/data/export/expenses.csv', 'expenser-expenses.csv')}>
             {t('settings.exportExpenses')}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => downloadFile('/data/export/income.csv', 'expenser-income.csv')}
-            className={secondaryButtonClass}
-          >
+          </SecondaryButton>
+          <SecondaryButton disabled={busy} onClick={() => downloadFile('/data/export/income.csv', 'expenser-income.csv')}>
             {t('settings.exportIncome')}
-          </button>
+          </SecondaryButton>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
@@ -283,30 +267,22 @@ export function Settings() {
             className="hidden"
             tabIndex={-1}
           />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => fileInput.current?.click()}
-            className={secondaryButtonClass}
-          >
+          <SecondaryButton disabled={busy} onClick={() => fileInput.current?.click()}>
             {t('settings.importBackup')}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setConfirming('delete')}
-            className="min-h-10 cursor-pointer rounded-[10px] border border-red-500 px-3.5 font-semibold text-red-500 hover:bg-red-500 hover:text-white disabled:cursor-default disabled:opacity-60"
-          >
+          </SecondaryButton>
+          <DangerButton disabled={busy} onClick={() => setConfirming('delete')}>
             {t('settings.deleteData')}
-          </button>
+          </DangerButton>
         </div>
         <StatusLine status={dataStatus} />
       </Card>
 
       {health?.demo && (
-        <Card className="flex flex-col items-start gap-3 p-4 nav:p-5">
-          <h2 className="font-semibold text-strong">{t('settings.demoTitle')}</h2>
-          <p className="text-[13px] text-muted">{t('settings.demoNote')}</p>
+        <Card className="flex flex-col items-start gap-3 p-4 nav:p-5" aria-labelledby="demo-title">
+          <h2 id="demo-title" className="font-semibold text-strong">
+            {t('settings.demoTitle')}
+          </h2>
+          <p className="text-sm text-muted">{t('settings.demoNote')}</p>
           <Button onClick={() => setConfirming('reset')}>{t('settings.resetDemo')}</Button>
           <StatusLine status={resetStatus} />
         </Card>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import { Button, IconButton } from '../components/ui/Button.tsx'
+import { Button, IconButton, SecondaryButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
+import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
 import { AmountField, Field, cardTitleClass, emptyRowClass, inputClass } from '../components/ui/fields.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
@@ -29,6 +30,7 @@ export function Recurring() {
   const [startDate, setStartDate] = useState(today)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string>()
+  const [pendingDelete, setPendingDelete] = useState<RecurringItem>()
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -73,15 +75,15 @@ export function Recurring() {
       className={`flex flex-wrap items-center justify-between gap-3 border-t border-line py-3 ${item.active ? '' : 'opacity-60'}`}
     >
       <div className="flex min-w-0 flex-col">
-        <span className="truncate font-medium text-strong">{item.title}</span>
-        <span className="flex items-center gap-1 text-[13px] text-muted">
+        <span className="wrap-anywhere font-medium text-strong">{item.title}</span>
+        <span className="flex items-center gap-1 text-sm text-muted">
           {item.category && <Icon name={categoryIcon(item.category)} size={13} className="shrink-0" />}
           {item.category && `${categoryName(item.category)} · `}
           {t(frequencyLabel[item.frequency])} ·{' '}
           {item.active ? t('recurring.nextDue', { date: formatDate(item.nextDue) }) : t('recurring.paused')}
         </span>
         {item.kind === 'expense' && item.frequency === 'yearly' && (
-          <span className="text-[13px] text-muted">{t('recurring.setAside', { amount: formatMoney(item.monthlyCents) })}</span>
+          <span className="text-sm text-muted">{t('recurring.setAside', { amount: formatMoney(item.monthlyCents) })}</span>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -90,18 +92,18 @@ export function Recurring() {
             {formatMoney(item.amountCents, item.currency)}
           </span>
           {ratesReady && item.currency !== currency && (
-            <span className="text-[13px] text-muted tabular-nums">{formatIn(item.amountCents, item.currency)}</span>
+            <span className="text-sm text-muted tabular-nums">{formatIn(item.amountCents, item.currency)}</span>
           )}
         </div>
-        <button
-          type="button"
+        <SecondaryButton
           onClick={() => act(`/recurring/${item.id}`, { method: 'PATCH', body: JSON.stringify({ active: !item.active }) })}
-          className="min-h-9 cursor-pointer rounded-[10px] px-2.5 text-sm font-medium text-body hover:bg-hover hover:text-strong"
+          className="text-sm"
+          aria-label={`${item.active ? t('recurring.pause') : t('recurring.resume')}: ${item.title}`}
         >
           {item.active ? t('recurring.pause') : t('recurring.resume')}
-        </button>
+        </SecondaryButton>
         <IconButton
-          onClick={() => act(`/recurring/${item.id}`, { method: 'DELETE' })}
+          onClick={() => setPendingDelete(item)}
           aria-label={t('recurring.deleteLabel', { title: item.title })}
         >
           <Icon name="close" size={18} />
@@ -115,7 +117,7 @@ export function Recurring() {
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
-      <PageHeader title={t('recurring.title')} subtitle={t('recurring.subtitle')} />
+      <PageHeader title={t('recurring.title')} subtitle={t('recurring.subtitle')} glossary />
 
       <Card className="p-4 nav:p-5" aria-labelledby="add-recurring-title">
         <h2 id="add-recurring-title" className={`pb-3 ${cardTitleClass}`}>
@@ -128,7 +130,7 @@ export function Recurring() {
               <option value="income">{t('recurring.paycheck')}</option>
             </select>
           </Field>
-          <Field label={t('expenses.fieldTitle')}>
+          <Field label={t('expenses.fieldTitle')} hint={t('hint.title')}>
             <input
               required
               maxLength={120}
@@ -139,7 +141,7 @@ export function Recurring() {
             />
           </Field>
           {kind === 'expense' && (
-            <Field label={t('expenses.category')}>
+            <Field label={t('expenses.category')} hint={t('hint.category')}>
               <select required value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
                 <option value="" disabled>
                   {t('expenses.selectCategory')}
@@ -154,6 +156,7 @@ export function Recurring() {
           )}
           <AmountField
             label={t('expenses.amount')}
+            hint={t('hint.amount')}
             amount={amount}
             onAmount={setAmount}
             currency={itemCurrency}
@@ -168,7 +171,7 @@ export function Recurring() {
               ))}
             </select>
           </Field>
-          <Field label={t('recurring.startDate')}>
+          <Field label={t('recurring.startDate')} hint={t('hint.startDate')}>
             <input required type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
           </Field>
           <div className="flex items-center gap-3 min-[560px]:col-span-2 nav:col-span-4">
@@ -177,7 +180,7 @@ export function Recurring() {
               {t('recurring.add')}
             </Button>
             {formError && (
-              <p className="text-sm text-red-500" role="alert">
+              <p className="text-sm text-danger" role="alert">
                 {formError}
               </p>
             )}
@@ -187,7 +190,10 @@ export function Recurring() {
       </Card>
 
       {data && (data.totals.expensesCents > 0 || data.totals.incomeCents > 0) && (
-        <section className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-3 nav:gap-4" aria-label={t('recurring.totals')}>
+        <section className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-3 nav:gap-4" aria-labelledby="recurring-totals-title">
+          <h2 id="recurring-totals-title" className="sr-only">
+            {t('recurring.totals')}
+          </h2>
           {[
             { id: 'bills', label: t('recurring.monthlyBills'), value: data.totals.expensesCents },
             { id: 'income', label: t('recurring.monthlyIncome'), value: data.totals.incomeCents },
@@ -195,8 +201,8 @@ export function Recurring() {
           ].map((s) => (
             <Card key={s.id} className="flex flex-col gap-1 p-3.5 min-[420px]:p-4.5">
               <p className="text-sm text-muted">{s.label}</p>
-              <p className="truncate text-xl font-bold tracking-tight text-strong">{formatMoney(s.value)}</p>
-              {s.hint && <p className="text-[13px] text-muted">{s.hint}</p>}
+              <p className="wrap-anywhere text-xl font-bold tracking-tight text-strong">{formatMoney(s.value)}</p>
+              {s.hint && <p className="text-sm text-muted">{s.hint}</p>}
             </Card>
           ))}
         </section>
@@ -213,7 +219,7 @@ export function Recurring() {
             {group.title}
           </h2>
           {loading ? (
-            <p className={emptyRowClass}>{t('common.loading')}</p>
+            <p className={emptyRowClass} role="status">{t('common.loading')}</p>
           ) : error || !data ? (
             <p className={emptyRowClass} role="alert">
               {t('recurring.loadError', { error: error ?? '' })}
@@ -225,6 +231,20 @@ export function Recurring() {
           )}
         </Card>
       ))}
+
+      {pendingDelete && (
+        <ConfirmToast
+          title={t('recurring.confirmTitle', { title: pendingDelete.title })}
+          confirmLabel={t('common.delete')}
+          onConfirm={() => {
+            void act(`/recurring/${pendingDelete.id}`, { method: 'DELETE' })
+            setPendingDelete(undefined)
+          }}
+          onCancel={() => setPendingDelete(undefined)}
+        >
+          {t('recurring.confirmBody')}
+        </ConfirmToast>
+      )}
     </div>
   )
 }

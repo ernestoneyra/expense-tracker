@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Button, IconButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
-import { AmountField, Field, ProgressBar, cardTitleClass, emptyRowClass, inputClass } from '../components/ui/fields.tsx'
+import { AmountField, Field, PercentInput, ProgressBar, cardTitleClass, emptyRowClass, inputClass } from '../components/ui/fields.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
 import { amountStepFor } from '../i18n/config.ts'
@@ -87,14 +87,14 @@ export function Debts() {
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
-      <PageHeader title={t('debts.title')} subtitle={t('debts.subtitle')} />
+      <PageHeader title={t('debts.title')} subtitle={t('debts.subtitle')} glossary />
 
       <Card className="p-4 nav:p-5" aria-labelledby="add-debt-title">
         <h2 id="add-debt-title" className={`pb-3 ${cardTitleClass}`}>
           {t('debts.new')}
         </h2>
         <form onSubmit={submit} className="grid gap-3 min-[560px]:grid-cols-2 nav:grid-cols-4">
-          <Field label={t('debts.name')}>
+          <Field label={t('debts.name')} hint={t('hint.debtName')}>
             <input
               required
               maxLength={80}
@@ -106,35 +106,29 @@ export function Debts() {
           </Field>
           <AmountField
             label={t('debts.balance')}
+            hint={t('hint.balance')}
             amount={balance}
             onAmount={setBalance}
             currency={debtCurrency}
             onCurrency={setDebtCurrency}
           />
-          <Field label={t('debts.apr')}>
-            <div className="relative">
-              <input
-                required
-                type="number"
-                min="0"
-                max="100"
-                step="any"
-                inputMode="decimal"
-                value={apr}
-                onChange={(e) => setApr(e.target.value)}
-                className={`${inputClass} pr-8`}
-              />
-              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted">%</span>
-            </div>
+          <Field label={t('debts.apr')} hint={t('hint.apr')}>
+            <PercentInput required min="0" max="100" step="any" value={apr} onChange={(e) => setApr(e.target.value)} />
           </Field>
-          <AmountField label={t('debts.minimum')} amount={minimum} onAmount={setMinimum} currency={debtCurrency} />
+          <AmountField
+            label={t('debts.minimum')}
+            hint={t('hint.minimum')}
+            amount={minimum}
+            onAmount={setMinimum}
+            currency={debtCurrency}
+          />
           <div className="flex items-center gap-3 min-[560px]:col-span-2 nav:col-span-4">
             <Button type="submit" disabled={submitting}>
               <Icon name="plus" size={18} />
               {t('debts.add')}
             </Button>
             {formError && (
-              <p className="text-sm text-red-500" role="alert">
+              <p className="text-sm text-danger" role="alert">
                 {formError}
               </p>
             )}
@@ -150,8 +144,8 @@ export function Debts() {
             </h2>
             <p className="text-sm text-muted">{t('debts.planText')}</p>
           </div>
-          <form onSubmit={applyExtra} className="flex flex-wrap items-end gap-3">
-            <Field label={t('debts.extra', { currency })} className="w-full min-[420px]:w-56">
+          <form onSubmit={applyExtra} className="flex flex-wrap items-start gap-3">
+            <Field label={t('debts.extra', { currency })} hint={t('hint.extra')} className="w-full min-[420px]:w-56">
               <input
                 type="number"
                 min="0"
@@ -163,21 +157,22 @@ export function Debts() {
                 className={inputClass}
               />
             </Field>
-            <Button type="submit">{t('debts.updatePlan')}</Button>
+            <Button type="submit" className="min-[560px]:mt-[25px]">{t('debts.updatePlan')}</Button>
           </form>
           <div className="grid gap-3 min-[560px]:grid-cols-2">
             {(['avalanche', 'snowball'] as const).map((s) => (
+              // The chosen plan has a thicker border as well as a tint, so colour is not the only cue (1.4.1).
               <button
                 key={s}
                 type="button"
                 aria-pressed={strategy === s}
                 onClick={() => setStrategy(s)}
-                className={`flex cursor-pointer flex-col gap-1 rounded-[12px] border p-3.5 text-left ${
-                  strategy === s ? 'border-accent bg-accent-soft' : 'border-line hover:bg-hover'
+                className={`flex min-h-11 cursor-pointer flex-col gap-1 rounded-[12px] border-2 p-3.5 text-left ${
+                  strategy === s ? 'border-accent bg-accent-soft' : 'border-field hover:bg-hover'
                 }`}
               >
                 <span className="font-semibold text-strong">{t(`debts.${s}`)}</span>
-                <span className="text-[13px] text-muted">{t(`debts.${s}Text`)}</span>
+                <span className="text-sm text-muted">{t(`debts.${s}Text`)}</span>
                 <span className="text-sm text-body">{planLine(data.plan[s])}</span>
               </button>
             ))}
@@ -197,7 +192,7 @@ export function Debts() {
           {t('debts.all')}
         </h2>
         {loading ? (
-          <p className={emptyRowClass}>{t('common.loading')}</p>
+          <p className={emptyRowClass} role="status">{t('common.loading')}</p>
         ) : error || !data ? (
           <p className={emptyRowClass} role="alert">
             {t('debts.loadError', { error: error ?? '' })}
@@ -293,15 +288,15 @@ function DebtRow({
     <li className="flex flex-col gap-3 border-t border-line py-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col">
-          <span className="truncate font-medium text-strong">{debt.name}</span>
-          <span className="text-[13px] text-muted">
+          <span className="wrap-anywhere font-medium text-strong">{debt.name}</span>
+          <span className="text-sm text-muted">
             {t('debts.rate', { apr: debt.aprPercent })} · {t('debts.minPayment', { amount: formatMoney(debt.minPaymentCents) })}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <div className="flex flex-col items-end">
             <span className="font-semibold text-strong tabular-nums">{formatMoney(debt.balanceCents)}</span>
-            <span className="text-[13px] text-muted">{t('debts.owed')}</span>
+            <span className="text-sm text-muted">{t('debts.owed')}</span>
           </div>
           <IconButton
             onClick={() => {
@@ -321,7 +316,7 @@ function DebtRow({
       </div>
 
       <ProgressBar ratio={paidShare} label={debt.name} />
-      <p className="text-[13px] text-muted">
+      <p className="text-sm text-muted">
         {cleared
           ? t('debts.cleared')
           : `${t('debts.paidOff', { share: formatPercent(paidShare) })}${payoffMonth === null ? '' : ` · ${t('debts.clearsIn', { count: payoffMonth })}`}`}
@@ -332,16 +327,7 @@ function DebtRow({
         <form onSubmit={save} className="grid gap-3 min-[560px]:grid-cols-4 min-[560px]:items-end">
           <AmountField label={t('debts.balance')} amount={balance} onAmount={setBalance} currency={debt.currency} required={false} />
           <Field label={t('debts.apr')}>
-            <input
-              required
-              type="number"
-              min="0"
-              max="100"
-              step="any"
-              value={apr}
-              onChange={(e) => setApr(e.target.value)}
-              className={inputClass}
-            />
+            <PercentInput required min="0" max="100" step="any" value={apr} onChange={(e) => setApr(e.target.value)} />
           </Field>
           <AmountField label={t('debts.minimum')} amount={minimum} onAmount={setMinimum} currency={debt.currency} required={false} />
           <Button type="submit">{t('common.save')}</Button>
@@ -356,20 +342,18 @@ function DebtRow({
           <Field label={t('expenses.date')}>
             <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
           </Field>
-          <Button type="submit" className="min-h-10">
-            {t('debts.recordPayment')}
-          </Button>
+          <Button type="submit">{t('debts.recordPayment')}</Button>
         </form>
       )}
       {error && (
-        <p className="text-sm text-red-500" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {error}
         </p>
       )}
 
       {debt.payments.length > 0 && (
         <details className="text-sm">
-          <summary className="cursor-pointer text-muted hover:text-strong">
+          <summary className="flex min-h-11 cursor-pointer items-center font-medium text-body hover:text-strong">
             {t('debts.history', { count: debt.payments.length })}
           </summary>
           <ul className="m-0 mt-2 list-none p-0">

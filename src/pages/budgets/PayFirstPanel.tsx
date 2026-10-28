@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '../../components/ui/Button.tsx'
-import { Field, inputClass } from '../../components/ui/fields.tsx'
+import { Field, PercentInput } from '../../components/ui/fields.tsx'
 import { usePreferences } from '../../i18n/PreferencesContext.ts'
 import type { Overview } from '../../lib/api.ts'
 import { saveMethod, type PanelProps } from './methods.ts'
@@ -38,29 +38,16 @@ export function PayFirstPanel({ data, reload }: PanelProps & { data: Overview })
         active={data.method === 'payFirst'}
       />
 
-      <form onSubmit={save} className="grid gap-3 min-[560px]:grid-cols-[1fr_auto] min-[560px]:items-end">
-        <Field label={t('budgets.savingsShare')}>
-          <div className="relative">
-            <input
-              required
-              type="number"
-              min="0"
-              max="100"
-              step="any"
-              inputMode="decimal"
-              value={savings}
-              onChange={(e) => setSavings(e.target.value)}
-              className={`${inputClass} pr-8`}
-            />
-            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted">%</span>
-          </div>
+      <form onSubmit={save} className="grid gap-3 min-[560px]:grid-cols-[1fr_auto] min-[560px]:items-start">
+        <Field label={t('budgets.savingsShare')} hint={t('hint.percent')}>
+          <PercentInput required min="0" max="100" step="any" value={savings} onChange={(e) => setSavings(e.target.value)} />
         </Field>
-        <Button type="submit" disabled={!valid}>
+        <Button type="submit" disabled={!valid} className="min-[560px]:mt-[25px]">
           {data.method === 'payFirst' ? t('common.save') : t('budgets.useMethod')}
         </Button>
       </form>
       {error && (
-        <p className="text-sm text-red-500" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {error}
         </p>
       )}

@@ -43,13 +43,13 @@ export function ZeroBasedPanel({ data, reload }: PanelProps & { data: Overview }
         <li className="flex items-baseline justify-between gap-3 border-t border-line py-3">
           <span className="font-semibold text-strong">{t('budgets.lineUnassigned')}</span>
           <span
-            className={`text-lg font-bold tabular-nums ${Math.abs(unassigned) < 1 ? 'text-accent-text' : unassigned < 0 ? 'text-red-500' : 'text-strong'}`}
+            className={`text-lg font-bold tabular-nums ${Math.abs(unassigned) < 1 ? 'text-accent-text' : unassigned < 0 ? 'text-danger' : 'text-strong'}`}
           >
             {formatMoney(unassigned)}
           </span>
         </li>
       </ul>
-      <p className={`text-sm ${unassigned < -1 ? 'text-red-500' : 'text-muted'}`}>
+      <p className={`text-sm ${unassigned < -1 ? 'text-danger' : 'text-muted'}`}>
         {Math.abs(unassigned) < 1
           ? t('budgets.zeroDone')
           : unassigned > 0

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button, IconButton } from '../components/ui/Button.tsx'
+import { ConfirmToast } from '../components/ui/ConfirmToast.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { AmountField, Field, cardTitleClass, emptyRowClass, inputClass } from '../components/ui/fields.tsx'
 import { Icon } from '../components/ui/Icon.tsx'
@@ -17,6 +18,7 @@ export function Income() {
   const [entryCurrency, setEntryCurrency] = useState(defaultEntryCurrency)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string>()
+  const [pendingDelete, setPendingDelete] = useState<IncomeEntry>()
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -35,9 +37,10 @@ export function Income() {
     }
   }
 
-  const remove = async (id: string) => {
+  const remove = async (entry: IncomeEntry) => {
+    setPendingDelete(undefined)
     try {
-      await api(`/income/${id}`, { method: 'DELETE' })
+      await api(`/income/${entry.id}`, { method: 'DELETE' })
       reload()
     } catch (err) {
       setFormError((err as Error).message)
@@ -53,7 +56,7 @@ export function Income() {
           {t('income.new')}
         </h2>
         <form onSubmit={submit} className="grid gap-3 min-[560px]:grid-cols-2 nav:grid-cols-3">
-          <Field label={t('income.source')}>
+          <Field label={t('income.source')} hint={t('hint.source')}>
             <input
               required
               maxLength={120}
@@ -63,11 +66,12 @@ export function Income() {
               className={inputClass}
             />
           </Field>
-          <Field label={t('expenses.date')}>
+          <Field label={t('expenses.date')} hint={t('hint.date')}>
             <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
           </Field>
           <AmountField
             label={t('expenses.amount')}
+            hint={t('hint.amount')}
             amount={amount}
             onAmount={setAmount}
             currency={entryCurrency}
@@ -79,7 +83,7 @@ export function Income() {
               {t('income.add')}
             </Button>
             {formError && (
-              <p className="text-sm text-red-500" role="alert">
+              <p className="text-sm text-danger" role="alert">
                 {formError}
               </p>
             )}
@@ -92,7 +96,7 @@ export function Income() {
           {t('income.all')}
         </h2>
         {loading ? (
-          <p className={emptyRowClass}>{t('common.loading')}</p>
+          <p className={emptyRowClass} role="status">{t('common.loading')}</p>
         ) : error || !entries ? (
           <p className={emptyRowClass} role="alert">
             {t('income.loadError', { error: error ?? '' })}
@@ -104,8 +108,8 @@ export function Income() {
             {entries.map((entry) => (
               <li key={entry.id} className="flex items-center justify-between gap-3 border-t border-line py-3">
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate font-medium text-strong">{entry.title}</span>
-                  <span className="text-[13px] text-muted">{formatDate(entry.date)}</span>
+                  <span className="wrap-anywhere font-medium text-strong">{entry.title}</span>
+                  <span className="text-sm text-muted">{formatDate(entry.date)}</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <div className="flex flex-col items-end">
@@ -113,12 +117,12 @@ export function Income() {
                       {formatMoney(entry.amountCents, entry.currency)}
                     </span>
                     {ratesReady && entry.currency !== currency && (
-                      <span className="text-[13px] text-muted tabular-nums">
+                      <span className="text-sm text-muted tabular-nums">
                         {formatIn(entry.amountCents, entry.currency)}
                       </span>
                     )}
                   </div>
-                  <IconButton onClick={() => remove(entry.id)} aria-label={t('income.deleteLabel', { title: entry.title })}>
+                  <IconButton onClick={() => setPendingDelete(entry)} aria-label={t('income.deleteLabel', { title: entry.title })}>
                     <Icon name="close" size={18} />
                   </IconButton>
                 </div>
@@ -127,6 +131,17 @@ export function Income() {
           </ul>
         )}
       </Card>
+
+      {pendingDelete && (
+        <ConfirmToast
+          title={t('income.confirmTitle', { title: pendingDelete.title })}
+          confirmLabel={t('common.delete')}
+          onConfirm={() => remove(pendingDelete)}
+          onCancel={() => setPendingDelete(undefined)}
+        >
+          {t('income.confirmBody')}
+        </ConfirmToast>
+      )}
     </div>
   )
 }

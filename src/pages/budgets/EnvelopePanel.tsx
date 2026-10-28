@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button, IconButton } from '../../components/ui/Button.tsx'
+import { ConfirmToast } from '../../components/ui/ConfirmToast.tsx'
 import { AmountField, Field, emptyRowClass, inputClass } from '../../components/ui/fields.tsx'
 import { Icon } from '../../components/ui/Icon.tsx'
 import { categoryIcon } from '../../config/categoryIcons.ts'
@@ -17,6 +18,7 @@ export function EnvelopePanel({ data, reload }: PanelProps & { data: Overview })
   const [category, setCategory] = useState('')
   const [amount, setAmount] = useState('')
   const [error, setError] = useState<string>()
+  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string }>()
 
   const refresh = () => {
     reloadLimits()
@@ -40,6 +42,7 @@ export function EnvelopePanel({ data, reload }: PanelProps & { data: Overview })
   }
 
   const remove = async (id: string) => {
+    setPendingRemove(undefined)
     try {
       await api(`/budget/categories/${id}`, { method: 'DELETE' })
       setError(undefined)
@@ -67,8 +70,8 @@ export function EnvelopePanel({ data, reload }: PanelProps & { data: Overview })
         }}
       />
 
-      <form onSubmit={submit} className="grid gap-3 min-[560px]:grid-cols-[1fr_1fr_auto] min-[560px]:items-end">
-        <Field label={t('expenses.category')}>
+      <form onSubmit={submit} className="grid gap-3 min-[560px]:grid-cols-[1fr_1fr_auto] min-[560px]:items-start">
+        <Field label={t('expenses.category')} hint={t('hint.category')}>
           <select required value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
             <option value="" disabled>
               {t('expenses.selectCategory')}
@@ -80,20 +83,20 @@ export function EnvelopePanel({ data, reload }: PanelProps & { data: Overview })
             ))}
           </select>
         </Field>
-        <AmountField label={t('budgets.monthlyLimit')} amount={amount} onAmount={setAmount} currency={currency} />
-        <Button type="submit">
+        <AmountField label={t('budgets.monthlyLimit')} hint={t('hint.limit')} amount={amount} onAmount={setAmount} currency={currency} />
+        <Button type="submit" className="min-[560px]:mt-[25px]">
           <Icon name="plus" size={18} />
           {t('budgets.setLimit')}
         </Button>
       </form>
       {error && (
-        <p className="text-sm text-red-500" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {error}
         </p>
       )}
 
       {data.monthlyCents > 0 && data.plan.limitsCents > data.monthlyCents && (
-        <p className="text-sm text-red-500" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {t('budgets.limitsOverBudget', {
             limits: formatMoney(data.plan.limitsCents),
             budget: formatMoney(data.monthlyCents),
@@ -112,9 +115,10 @@ export function EnvelopePanel({ data, reload }: PanelProps & { data: Overview })
                   label={
                     <span className="flex items-center gap-2">
                       <Icon name={categoryIcon(c.name)} size={16} className="shrink-0 text-muted" />
-                      <span className="truncate">{categoryName(c.name)}</span>
+                      <span className="wrap-anywhere">{categoryName(c.name)}</span>
                     </span>
                   }
+                  name={categoryName(c.name)}
                   actual={c.spentCents}
                   target={c.limitCents}
                   detail={c.limitCents === null ? t('budgets.noLimit') : undefined}
@@ -133,7 +137,7 @@ export function EnvelopePanel({ data, reload }: PanelProps & { data: Overview })
                   </IconButton>
                   {limitId(c.name) && (
                     <IconButton
-                      onClick={() => remove(limitId(c.name)!)}
+                      onClick={() => setPendingRemove({ id: limitId(c.name)!, name: c.name })}
                       aria-label={t('budgets.removeLimit', { name: categoryName(c.name) })}
                     >
                       <Icon name="close" size={18} />
@@ -144,6 +148,17 @@ export function EnvelopePanel({ data, reload }: PanelProps & { data: Overview })
             </li>
           ))}
         </ul>
+      )}
+
+      {pendingRemove && (
+        <ConfirmToast
+          title={t('budgets.confirmTitle', { name: categoryName(pendingRemove.name) })}
+          confirmLabel={t('common.delete')}
+          onConfirm={() => remove(pendingRemove.id)}
+          onCancel={() => setPendingRemove(undefined)}
+        >
+          {t('budgets.confirmBody')}
+        </ConfirmToast>
       )}
     </div>
   )

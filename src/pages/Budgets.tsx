@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { ChipButton } from '../components/ui/Button.tsx'
 import { Card } from '../components/ui/Card.tsx'
 import { ProgressBar, cardTitleClass } from '../components/ui/fields.tsx'
+import { Icon } from '../components/ui/Icon.tsx'
 import { PageHeader } from '../components/ui/PageHeader.tsx'
 import type { MessageKey } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
@@ -23,12 +25,21 @@ export function Budgets() {
   // Which method's panel is open; until one is picked it follows the saved (active) method.
   const [picked, setPicked] = useState<BudgetMethod>()
 
-  if (loading) return <p className="text-muted">{t('common.loading')}</p>
-  if (error || !data) {
+  // The heading is there while loading or after an error, so the page always has one.
+  if (loading || error || !data) {
     return (
-      <p className="text-muted" role="alert">
-        {t('budgets.loadError', { error: error ?? t('dashboard.noData') })}
-      </p>
+      <div className="flex max-w-275 flex-col gap-6">
+        <PageHeader title={t('budgets.title')} subtitle={t('budgets.subtitle')} />
+        {loading ? (
+          <p className="text-muted" role="status">
+            {t('common.loading')}
+          </p>
+        ) : (
+          <p className="text-muted" role="alert">
+            {t('budgets.loadError', { error: error ?? t('dashboard.noData') })}
+          </p>
+        )}
+      </div>
     )
   }
 
@@ -47,9 +58,12 @@ export function Budgets() {
 
   return (
     <div className="flex max-w-275 flex-col gap-6">
-      <PageHeader title={t('budgets.title')} subtitle={t('budgets.subtitle')} />
+      <PageHeader title={t('budgets.title')} subtitle={t('budgets.subtitle')} glossary />
 
-      <section className="grid grid-cols-2 gap-3 nav:grid-cols-4 nav:gap-4" aria-label={formatMonth(data.month)}>
+      <section className="grid grid-cols-2 gap-3 nav:grid-cols-4 nav:gap-4" aria-labelledby="budgets-month-title">
+        <h2 id="budgets-month-title" className="sr-only">
+          {formatMonth(data.month)}
+        </h2>
         {[
           { id: 'income', label: t('budgets.income'), value: formatMoney(data.incomeCents), hint: formatMonth(data.month) },
           {
@@ -73,8 +87,8 @@ export function Budgets() {
         ].map((s) => (
           <Card key={s.id} className="flex flex-col gap-1 p-3.5 min-[420px]:p-4.5">
             <p className="text-sm text-muted">{s.label}</p>
-            <p className="truncate text-xl font-bold tracking-tight text-strong min-[420px]:text-2xl">{s.value}</p>
-            <p className="text-[13px] text-muted">{s.hint}</p>
+            <p className="wrap-anywhere text-xl font-bold tracking-tight text-strong min-[420px]:text-2xl">{s.value}</p>
+            <p className="text-sm text-muted">{s.hint}</p>
           </Card>
         ))}
       </section>
@@ -90,7 +104,7 @@ export function Budgets() {
             </span>
           </div>
           <ProgressBar ratio={data.spentCents / data.monthlyCents} over={overBudget} label={t('dashboard.budgetLabel')} />
-          <p className={`text-sm ${overBudget || projectedOver ? 'text-red-500' : 'text-muted'}`}>
+          <p className={`text-sm ${overBudget || projectedOver ? 'text-danger' : 'text-muted'}`}>
             {overBudget
               ? t('budgets.overall.over', { amount: formatMoney(data.spentCents - data.monthlyCents) })
               : projectedOver
@@ -103,18 +117,15 @@ export function Budgets() {
       <Card className="flex flex-col gap-4 p-4 nav:p-5" aria-label={t('budgets.methods')}>
         <div role="group" aria-label={t('budgets.methods')} className="flex flex-wrap gap-1">
           {methods.map((m) => (
-            <button
-              key={m.key}
-              type="button"
-              aria-pressed={view === m.key}
-              onClick={() => setPicked(m.key)}
-              className={`min-h-9 cursor-pointer rounded-[10px] px-3 text-sm font-medium ${
-                view === m.key ? 'bg-accent-soft text-accent-text' : 'text-body hover:bg-hover hover:text-strong'
-              }`}
-            >
+            <ChipButton key={m.key} pressed={view === m.key} onClick={() => setPicked(m.key)}>
               {t(m.labelKey)}
-              {data.method === m.key && ' ✓'}
-            </button>
+              {data.method === m.key && (
+                <>
+                  <Icon name="check" size={16} className="ml-1 inline" />
+                  <span className="sr-only"> ({t('budgets.active')})</span>
+                </>
+              )}
+            </ChipButton>
           ))}
         </div>
         {view === 'envelope' ? (
