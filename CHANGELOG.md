@@ -5,25 +5,10 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
-
-- Settings: a **default currency for new entries**. New expenses, income, recurring items, goals and debts start in it instead of the display currency; by default it still follows the display currency.
-- Settings: a **theme** choice of Light, Dark or Match system.
-- Settings: **backup and restore**. Download everything as a JSON backup, or the expenses or income as CSV; restore a backup (it replaces the current data and is fully validated before anything is deleted); and **Delete all my data**, which leaves the default categories. New endpoints `GET /api/data/export`, `GET /api/data/export/expenses.csv`, `GET /api/data/export/income.csv`, `POST /api/data/import` and `DELETE /api/data`.
-- Settings: **exchange-rate status**. Shows the date of the rates and when they were last checked, warns when the provider can't be reached and the last saved rates are in use, and has a **Refresh rates** button (`POST /api/rates/refresh`, at most once a minute). `GET /api/rates` now also returns `fetchedAt` and `stale`.
-
-### Changed
-
-- The theme button is gone from the header; the theme is now chosen in Settings.
-- The server accepts request bodies up to 10 MB on `/api/data` (for backups); every other route keeps the 100 kB default. A body that is too large or not valid JSON now gets a `413` or `400` with a message instead of a generic `500`.
-
 ## [0.7.0] - 2026-10-28
 
 ### Added
 
-- Icons for the ten default categories, shown on the Categories page and next to the category in the expense lists on the Dashboard and Expenses pages. Categories you create yourself get a generic tag icon.
 - **Income** page: record money coming in. The dashboard gains income, net and savings-rate figures once there is income this month, and lists categories that have gone over their limit.
 - **Budgets** page with four budgeting methods: category limits, a percentage split between needs, wants and savings (the classic 50/30/20 pre-fills the form), zero-based, and pay yourself first. It also shows this month's pace, and fixed versus variable spending. The existing monthly budget on the dashboard is unchanged.
 - Categories can be marked fixed or variable and as a need or a want. Nothing is classified by default.
@@ -32,11 +17,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Debts** page: balances, rates and payments, with avalanche and snowball payoff plans and an optional extra monthly payment.
 - **Reports** page: income, spending, net and savings rate for the last 3, 6 or 12 months, by month and by category.
 - New features start empty and contain no sample amounts or data; in demo mode they are cleared by "Reset demo data" too (capped at 100 records per kind per sandbox).
+- Settings: a **default currency for new entries**. New expenses, income, recurring items, goals and debts start in it instead of the display currency; by default it still follows the display currency.
+- Settings: a **theme** choice of Light, Dark or Match system.
+- Settings: **backup and restore**. Download everything as a JSON backup, or the expenses or income as CSV; restore a backup (it replaces the current data and is fully validated before anything is deleted); and **Delete all my data**, which leaves the default categories. New endpoints `GET /api/data/export`, `GET /api/data/export/expenses.csv`, `GET /api/data/export/income.csv`, `POST /api/data/import` and `DELETE /api/data`.
+- Settings: **exchange-rate status**. Shows the date of the rates and when they were last checked, warns when the provider can't be reached and the last saved rates are in use, and has a **Refresh rates** button (`POST /api/rates/refresh`, at most once a minute). `GET /api/rates` now also returns `fetchedAt` and `stale`.
 
 ### Changed
 
 - The Budgets, Reports and Recurring pages are no longer placeholders, and the placeholder page is gone.
 - The demo reset text now says that everything you entered is removed.
+- The theme button is gone from the header; the theme is now chosen in Settings.
+- The server accepts request bodies up to 10 MB on `/api/data` (for backups); every other route keeps the 100 kB default. A body that is too large or not valid JSON now gets a `413` or `400` with a message instead of a generic `500`.
+
+## [0.6.1] - 2026-10-27
+
+### Added
+
+- Icons for the ten default categories, shown on the Categories page and next to the category in the expense lists on the Dashboard and Expenses pages. Categories you create yourself get a generic tag icon.
+
+### Changed
+
 - The ten default categories are now shown in the selected language (English, Svenska, 日本語 and 繁體中文（台灣）) on the Dashboard, Expenses and Categories pages and in the category picker. Categories you create yourself are shown as typed, and the stored names stay in English. Sorting categories by name follows the selected language.
 
 ### Fixed
@@ -78,6 +78,7 @@ First tracked release of Expenser, a personal expense tracker.
 - `.env.example` and a README with screenshots, a feature list and setup instructions.
 - Placeholder pages for Budgets, Reports and Recurring expenses.
 
-[0.7.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.0...0.7.0
+[0.7.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.1...0.7.0
+[0.6.1]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/ernestoneyra/expense-tracker/releases/tag/0.5.0
