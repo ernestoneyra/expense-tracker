@@ -4,7 +4,7 @@ import { SigningKey } from '../models/SigningKey.ts'
 // Access tokens are signed with Ed25519 (JWS alg "EdDSA", RFC 8037). The public half is published at
 // the JWKS endpoint, so anything that needs to check a token can do so without being able to make one.
 
-export interface Key {
+interface Key {
   kid: string
   privateKey: KeyObject
   publicKey: KeyObject

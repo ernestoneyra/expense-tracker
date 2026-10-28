@@ -5,7 +5,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 // so no token ever reaches the browser. A provider shows up on the sign-in page only when its
 // client id and secret are set in the environment.
 
-export interface Profile {
+interface Profile {
   /** The provider's stable id for the account (never the email or the login name, which can change). */
   subject: string
   name?: string
@@ -15,7 +15,7 @@ export interface Profile {
   usernameHint: string
 }
 
-export interface Provider {
+interface Provider {
   id: 'google' | 'github'
   label: string
   authorizeUrl: string
@@ -96,7 +96,7 @@ export function configuredProviders(): Provider[] {
 const sha256 = (value: string) => createHash('sha256').update(value).digest('base64url')
 
 /** What must survive the round trip to the provider and back; kept in a short-lived HttpOnly cookie. */
-export interface Transaction {
+interface Transaction {
   provider: string
   state: string
   verifier: string

@@ -11,8 +11,8 @@ const MAX_MEMORY = 128 * 1024 * 1024
 /** The hash of a stored password can't ask for more work than this, whatever a corrupted record says. */
 const MAX_N = 2 ** 17
 
-export const PASSWORD_MIN = 8
-export const PASSWORD_MAX = 128
+const PASSWORD_MIN = 8
+const PASSWORD_MAX = 128
 
 const derive = (password: string, salt: Buffer, n: number, r: number, p: number) =>
   new Promise<Buffer>((resolve, reject) => {
@@ -50,7 +50,7 @@ export function verifyAgainstDummy(password: string): Promise<false> {
   return dummyHash.then((hash) => verifyPassword(password, hash)).then(() => false as const)
 }
 
-export type PasswordProblem = 'password_short' | 'password_long' | 'password_username'
+type PasswordProblem = 'password_short' | 'password_long' | 'password_username'
 
 /** What's wrong with a password someone is choosing, or `null`. Not used for passwords that already exist. */
 export function checkNewPassword(password: string, username?: string): PasswordProblem | null {

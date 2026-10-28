@@ -7,7 +7,7 @@ const HOUR = 60 * 60 * 1000
 const DAY = 24 * HOUR
 
 /** How long an access token works. Short, because it can't be taken back once issued. */
-export const ACCESS_TTL_SECONDS = Number(process.env.OAUTH_ACCESS_TTL) || 15 * 60
+const ACCESS_TTL_SECONDS = Number(process.env.OAUTH_ACCESS_TTL) || 15 * 60
 /** A refresh token lasts this long after its last use if the person asked to stay signed in, otherwise a day. */
 const PERSISTENT_REFRESH_MS = 30 * DAY
 const SHORT_REFRESH_MS = DAY

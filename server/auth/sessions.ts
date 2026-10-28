@@ -20,7 +20,7 @@ const REFRESH_AFTER = HOUR
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 
 /** Who a sign-in cookie belongs to. This is the authorization server's own record of a signed-in person. */
-export interface Authenticated {
+interface Authenticated {
   user: UserDoc
   sessionId: Types.ObjectId
   /** Whether they asked to stay signed in. */

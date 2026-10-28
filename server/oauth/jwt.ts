@@ -6,7 +6,7 @@ import { signingKey } from './keys.ts'
 
 export const AUDIENCE = 'expenser-api'
 
-export interface AccessClaims {
+interface AccessClaims {
   iss: string
   /** The user's id. */
   sub: string

@@ -67,7 +67,7 @@ const safeHost = (origin: string) => {
 }
 
 /** Who an access token says is calling, once the user is confirmed to still exist. */
-export interface BearerAuth {
+interface BearerAuth {
   user: UserDoc
   /** The sign-in this token belongs to (its refresh-token family). */
   familyId: string

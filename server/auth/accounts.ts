@@ -10,7 +10,7 @@ const RESERVED = new Set([
   'expenser', 'api', 'null', 'undefined', 'anonymous',
 ])
 
-export type UsernameProblem = 'username_invalid' | 'username_reserved'
+type UsernameProblem = 'username_invalid' | 'username_reserved'
 
 /** A username as typed, if it's allowed; otherwise what's wrong with it. */
 export function checkUsername(raw: unknown): { username: string } | { problem: UsernameProblem } {

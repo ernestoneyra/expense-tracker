@@ -20,7 +20,7 @@ export function parseCookies(header: string | undefined): Record<string, string>
 export const cookiesOf = (req: Request) => parseCookies(req.headers.cookie)
 
 /** Whether the browser reached us over HTTPS (behind a proxy, only if TRUST_PROXY is set). */
-export const isSecure = (req: Request) => req.secure || (process.env.APP_URL ?? '').startsWith('https://')
+const isSecure = (req: Request) => req.secure || (process.env.APP_URL ?? '').startsWith('https://')
 
 interface CookieOptions {
   /** Seconds; omit for a cookie that ends with the browser session. */

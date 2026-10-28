@@ -71,7 +71,7 @@ export interface Summary {
 
 export type BudgetMethod = 'envelope' | 'split' | 'zeroBased' | 'payFirst'
 
-export interface BudgetSettings {
+interface BudgetSettings {
   monthlyCents: number
   method: BudgetMethod
   needsPercent: number | null

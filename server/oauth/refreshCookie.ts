@@ -6,7 +6,7 @@ import { clearCookie, cookiesOf, setCookie } from '../auth/cookies.ts'
 // on another site; and limited to the OAuth endpoints, which are the only ones that need it. The
 // browser attaches it to the token request by itself, so the app never handles the token at all.
 
-export const REFRESH_COOKIE = 'expenser_refresh'
+const REFRESH_COOKIE = 'expenser_refresh'
 const PATH = '/api/oauth'
 
 export const readRefreshCookie = (req: Request) => cookiesOf(req)[REFRESH_COOKIE]

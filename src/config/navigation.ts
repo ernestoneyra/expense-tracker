@@ -14,7 +14,7 @@ export type NavId =
   | 'settings'
   | 'help'
 
-export interface NavItem {
+interface NavItem {
   id: NavId
   labelKey: MessageKey
   icon: IconName
