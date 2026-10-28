@@ -2,6 +2,7 @@ import { usePreferences } from '../../i18n/PreferencesContext.ts'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { Icon } from '../ui/Icon.tsx'
 import { AccountMenu } from './AccountMenu.tsx'
+import { Logo } from './Logo.tsx'
 
 interface HeaderProps {
   menuOpen: boolean
@@ -28,13 +29,7 @@ export function Header({ menuOpen, onMenuToggle, onAddExpense }: HeaderProps) {
         className="flex min-h-11 items-center gap-2.5 text-strong no-underline"
         href="#/dashboard"
       >
-        <span
-          className="grid size-8 place-items-center rounded-[9px] bg-accent text-[17px] font-bold text-accent-contrast"
-          aria-hidden="true"
-        >
-          E
-        </span>
-        <span className="text-xl font-bold tracking-tight">Expenser</span>
+        <Logo />
       </a>
 
       <div className="ml-auto flex items-center gap-2">
