@@ -220,6 +220,7 @@ In demo mode the sign-in page also offers **Try the demo without an account**. T
 | `npm run claim-data -- <username>` | Gives data saved before accounts existed to an empty account. |
 | `npm run security` | Sends NoSQL-injection payloads at every endpoint of a running app and fails if any is accepted, causes a server error, leaks or changes another account's data; see [Injection](#injection). |
 | `npm run a11y`    | Checks accessibility (colour contrast, axe-core WCAG rules, keyboard behaviour) against a running app; see [Accessibility checks](#accessibility-checks). |
+| `npm run screenshots` | Retakes the images in `docs/screenshots/` from a running demo app (signs in as `guest1` and resets its sample data first; needs Chrome). |
 
 ## Accessibility checks
 
@@ -263,6 +264,7 @@ src/
   lib/route.ts      The current page, kept in the URL hash (#/expenses)
   hooks/            Theme hook
 scripts/a11y/       Accessibility checks (`npm run a11y`): contrast, axe-core audit, keyboard behaviour
+scripts/screenshots.mjs  Retakes the README screenshots (`npm run screenshots`)
 docs/               Screenshots and the accessibility statement
 ```
 

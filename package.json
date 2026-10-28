@@ -17,7 +17,8 @@
     "preview": "vite preview",
     "start": "node --env-file-if-exists=.env server/index.ts",
     "security": "node scripts/security/nosql-probe.mjs",
-    "a11y": "node scripts/a11y/contrast.mjs && node scripts/a11y/audit.mjs && node scripts/a11y/behaviour.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "a11y":"node scripts/a11y/contrast.mjs && node scripts/a11y/audit.mjs && node scripts/a11y/behaviour.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
