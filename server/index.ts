@@ -13,6 +13,7 @@ import { Income } from './models/Income.ts'
 import { Recurring } from './models/Recurring.ts'
 import { budgetRouter } from './routes/budget.ts'
 import { categoriesRouter } from './routes/categories.ts'
+import { dataRouter } from './routes/data.ts'
 import { debtsRouter } from './routes/debts.ts'
 import { expensesRouter } from './routes/expenses.ts'
 import { goalsRouter } from './routes/goals.ts'
@@ -28,6 +29,9 @@ import { DEMO_MODE, sandboxMiddleware, seedLocalCategories, startSandboxCleanup 
 
 const app = express()
 app.disable('x-powered-by')
+// A backup is far bigger than the 100 kB default allows. Body parsers skip a body that is already
+// parsed, so this must come first; every other route keeps the default limit.
+app.use('/api/data', express.json({ limit: '10mb' }))
 app.use(express.json())
 
 app.get('/api/health', (_req, res) => {
@@ -51,6 +55,7 @@ app.use(
 app.use('/api/expenses', expensesRouter)
 app.use('/api/income', incomeRouter)
 app.use('/api/categories', categoriesRouter)
+app.use('/api/data', dataRouter)
 app.use('/api/budget', budgetRouter)
 app.use('/api/summary', summaryRouter)
 app.use('/api/goals', goalsRouter)
@@ -77,6 +82,15 @@ if (existsSync(path.join(dist, 'index.html'))) {
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) {
     res.status(400).json({ error: err.message })
+    return
+  }
+  // The body parser's own errors: a malformed or oversized request body.
+  if (err?.type === 'entity.too.large') {
+    res.status(413).json({ error: 'That file is too large' })
+    return
+  }
+  if (err?.type === 'entity.parse.failed') {
+    res.status(400).json({ error: 'The request is not valid JSON' })
     return
   }
   if (err instanceof RatesUnavailableError) {

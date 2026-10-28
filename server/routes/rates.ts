@@ -1,9 +1,13 @@
 import { Router } from 'express'
-import { getRates } from '../rates.ts'
+import { getRatesStatus } from '../rates.ts'
 
 export const ratesRouter = Router()
 
 ratesRouter.get('/', async (_req, res) => {
-  const { rates, updatedAt } = await getRates()
-  res.json({ base: 'USD', rates, updatedAt })
+  res.json({ base: 'USD', ...(await getRatesStatus()) })
+})
+
+// Asks the provider again instead of waiting for the cache to expire.
+ratesRouter.post('/refresh', async (_req, res) => {
+  res.json({ base: 'USD', ...(await getRatesStatus(true)) })
 })

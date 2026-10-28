@@ -13,7 +13,7 @@ import { fromCents, toCents, today } from '../lib/money.ts'
 type Strategy = 'avalanche' | 'snowball'
 
 export function Debts() {
-  const { t, formatMoney, currency } = usePreferences()
+  const { t, formatMoney, currency, entryCurrency } = usePreferences()
   // The extra monthly payment is applied (and sent to the server) when its form is submitted.
   const [extra, setExtra] = useState('')
   const [appliedExtra, setAppliedExtra] = useState(0)
@@ -22,7 +22,7 @@ export function Debts() {
 
   const [name, setName] = useState('')
   const [balance, setBalance] = useState('')
-  const [debtCurrency, setDebtCurrency] = useState(currency)
+  const [debtCurrency, setDebtCurrency] = useState(entryCurrency)
   const [apr, setApr] = useState('')
   const [minimum, setMinimum] = useState('')
   const [submitting, setSubmitting] = useState(false)

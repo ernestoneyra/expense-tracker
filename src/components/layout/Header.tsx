@@ -1,23 +1,14 @@
-import type { Theme } from '../../hooks/useTheme.ts'
 import { usePreferences } from '../../i18n/PreferencesContext.ts'
 import { Button, IconButton } from '../ui/Button.tsx'
 import { Icon } from '../ui/Icon.tsx'
 
 interface HeaderProps {
   menuOpen: boolean
-  theme: Theme
   onMenuToggle: () => void
-  onThemeToggle: () => void
   onAddExpense: () => void
 }
 
-export function Header({
-  menuOpen,
-  theme,
-  onMenuToggle,
-  onThemeToggle,
-  onAddExpense,
-}: HeaderProps) {
+export function Header({ menuOpen, onMenuToggle, onAddExpense }: HeaderProps) {
   const { t } = usePreferences()
   return (
     <header className="sticky top-0 z-30 col-span-full flex items-center gap-3 border-b border-line bg-surface px-4 nav:px-5">
@@ -50,12 +41,6 @@ export function Header({
           <Icon name="plus" size={18} />
           <span className="max-nav:hidden">{t('header.addExpense')}</span>
         </Button>
-        <IconButton
-          onClick={onThemeToggle}
-          aria-label={theme === 'dark' ? t('header.toLight') : t('header.toDark')}
-        >
-          <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
-        </IconButton>
         <IconButton className="rounded-full border border-line" aria-label={t('header.account')}>
           <Icon name="user" />
         </IconButton>

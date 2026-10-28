@@ -17,14 +17,14 @@ const frequencyLabel: Record<Frequency, MessageKey> = {
 }
 
 export function Recurring() {
-  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, categoryName } = usePreferences()
+  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, entryCurrency, categoryName } = usePreferences()
   const { data, error, loading, reload } = useApi<RecurringResponse>(`/recurring?currency=${currency}`)
   const { data: categories } = useApi<Category[]>('/categories')
   const [kind, setKind] = useState<'expense' | 'income'>('expense')
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [amount, setAmount] = useState('')
-  const [itemCurrency, setItemCurrency] = useState(currency)
+  const [itemCurrency, setItemCurrency] = useState(entryCurrency)
   const [frequency, setFrequency] = useState<Frequency>('monthly')
   const [startDate, setStartDate] = useState(today)
   const [submitting, setSubmitting] = useState(false)

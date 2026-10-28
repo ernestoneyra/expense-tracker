@@ -21,8 +21,6 @@ export const ja: Messages = {
   'header.addExpense': '支出を追加',
   'header.openNav': 'ナビゲーションを開く',
   'header.closeNav': 'ナビゲーションを閉じる',
-  'header.toLight': 'ライトモードに切り替え',
-  'header.toDark': 'ダークモードに切り替え',
   'header.account': 'アカウント',
 
   'dashboard.title': 'ダッシュボード',
@@ -321,11 +319,52 @@ export const ja: Messages = {
   'reports.vsPrevious': '前月比 {change}',
 
   'settings.title': '設定',
-  'settings.subtitle': 'アプリ全体で使用する言語と通貨を選択します。',
+  'settings.subtitle': '言語、通貨、外観、為替レート、データを管理します。',
   'settings.language': '言語',
   'settings.currency': '通貨',
   'settings.currencyNote':
     '金額はこの通貨で表示されます。別の通貨で入力した支出は現在の為替レートで換算され、各支出は入力時の金額を保持します。',
+
+  'settings.entryCurrency': '新規入力のデフォルト通貨',
+  'settings.entryCurrencySame': '表示通貨と同じ',
+  'settings.entryCurrencyNote':
+    '新しい支出、収入、定期項目、目標、借入は、この通貨で入力を始めます。各フォームで変更することもできます。',
+  'settings.theme': 'テーマ',
+  'settings.themeLight': 'ライト',
+  'settings.themeDark': 'ダーク',
+  'settings.themeSystem': 'システムに合わせる',
+
+  'settings.ratesTitle': '為替レート',
+  'settings.ratesUnavailable': '現在、為替レートを利用できません。他の通貨の金額は換算されずに表示されます。',
+  'settings.ratesStale':
+    'レート提供元に接続できなかったため、最後に保存したレートを使用しています。換算額が古い可能性があります。',
+  'settings.ratesUpdated': 'レート日付：{date}。最終確認：{checked}。',
+  'settings.ratesNote': 'レートは open.er-api.com から取得し、最大6時間保存されます。',
+  'settings.ratesRefresh': 'レートを更新',
+  'settings.ratesRefreshing': '更新中…',
+  'settings.ratesRefreshError': 'レートを更新できませんでした：{error}',
+
+  'settings.dataTitle': 'データ',
+  'settings.dataNote':
+    '入力したすべてのデータのバックアップをダウンロードしたり、復元したりできます。バックアップはJSONファイルです。CSVファイルは支出または収入のみで、表計算ソフト向けです。',
+  'settings.exportBackup': 'バックアップをダウンロード（JSON）',
+  'settings.exportExpenses': '支出（CSV）',
+  'settings.exportIncome': '収入（CSV）',
+  'settings.exportError': 'ファイルをダウンロードできませんでした：{error}',
+  'settings.importBackup': 'バックアップから復元…',
+  'settings.importTitle': 'このバックアップを復元しますか？',
+  'settings.importBody': '現在のデータはすべて {file} の内容に置き換えられます。',
+  'settings.importConfirm': '復元',
+  'settings.importDone': 'バックアップを復元しました。',
+  'settings.importError': 'バックアップを復元できませんでした：{error}',
+  'settings.importBadFile': 'このファイルは有効なJSONバックアップではありません。',
+  'settings.deleteData': 'すべてのデータを削除',
+  'settings.deleteTitle': 'すべてのデータを削除しますか？',
+  'settings.deleteBody':
+    '支出、収入、予算、目標、借入、定期項目がすべて削除され、デフォルトのカテゴリだけが残ります。元に戻せないため、先にバックアップをダウンロードしてください。',
+  'settings.deleteConfirm': 'すべて削除',
+  'settings.deleteDone': 'すべてのデータを削除しました。',
+  'settings.deleteError': 'データを削除できませんでした：{error}',
 
   'settings.demoTitle': 'デモデータ',
   'settings.demoNote': 'これはデモです。支出データはこのブラウザ専用で、1週間使用しないと削除されます。',

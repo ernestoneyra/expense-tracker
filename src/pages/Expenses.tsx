@@ -14,7 +14,7 @@ const inputClass =
 const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 
 export function Expenses() {
-  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, categoryName } = usePreferences()
+  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, entryCurrency, categoryName } = usePreferences()
   const { data: expenses, error, loading, reload } = useApi<Expense[]>('/expenses')
   const { data: categories } = useApi<Category[]>('/categories')
   const [title, setTitle] = useState('')
@@ -22,8 +22,8 @@ export function Expenses() {
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(today)
   const [amount, setAmount] = useState('')
-  // Starts as the display currency; each expense keeps the currency it is entered in.
-  const [expenseCurrency, setExpenseCurrency] = useState(currency)
+  // Starts as the default entry currency; each expense keeps the currency it is entered in.
+  const [expenseCurrency, setExpenseCurrency] = useState(entryCurrency)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string>()
 

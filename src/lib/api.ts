@@ -202,7 +202,7 @@ export interface Report {
   budgetCents: number
 }
 
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+async function request(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers)
   headers.set('x-sandbox-id', getSandboxId())
   if (init?.body) headers.set('content-type', 'application/json')
@@ -211,7 +211,25 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await res.json().catch(() => null)
     throw new Error(body?.error ?? `Request failed (${res.status})`)
   }
+  return res
+}
+
+export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await request(path, init)
   return res.status === 204 ? (undefined as T) : res.json()
+}
+
+/** Fetches a file from the API and saves it through the browser's download flow. */
+export async function download(path: string, fallbackName: string) {
+  const res = await request(path)
+  // The server names the file (it knows the date); the sandbox header means a plain link can't be used.
+  const name = /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName
+  const url = URL.createObjectURL(await res.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 export function useApi<T>(path: string) {

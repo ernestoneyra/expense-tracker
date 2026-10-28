@@ -45,7 +45,10 @@ Then open <http://localhost:5181>. The compose file also runs the app in demo mo
 - **Reports** – income, spending, net and savings rate for the last 3, 6 or 12 months, month by month and by category, compared with the month before.
 - **Multiple currencies** – SEK, EUR, GBP, JPY, USD and TWD. Totals on the dashboard are converted into your display currency using daily rates from [open.er-api.com](https://www.exchangerate-api.com) (no API key needed). Rates are cached for 6 hours, and the last good copy is used if the provider is unreachable.
 - **Languages** – English, Svenska, 日本語 and 繁體中文（台灣）. The browser language is detected on first visit; change it any time in **Settings**.
-- **Light/dark theme**, remembered between visits.
+- **Light, dark or match-system theme**, remembered between visits. Choose it in **Settings**.
+- **Default entry currency** – in **Settings**, choose the currency new expenses, income, recurring items, goals and debts start in (it follows the display currency until you pick one). You can still change it on each form.
+- **Backup and restore** – in **Settings**, download everything as a JSON backup, or just the expenses or income as CSV for a spreadsheet. A backup can be restored later, which replaces the current data; a file is fully checked first, so a bad one changes nothing. **Delete all my data** empties the app and leaves the default categories.
+- **Exchange-rate status** – **Settings** shows the date of the rates in use and when they were last checked, warns when the provider can't be reached and the last saved rates are being used, and has a **Refresh rates** button.
 
 None of the new features ship with sample amounts: income, category limits, goals, debts and recurring items start empty and hold only what you enter.
 
@@ -152,7 +155,7 @@ server/
   recurring.ts      Turns due recurring items into expenses / income
   debtPlan.ts       Avalanche and snowball payoff simulation
   models/           Mongoose models: Expense, Income, Category, CategoryBudget, Budget, Goal, Debt, Recurring
-  routes/           API routes: expenses, income, categories, budget, summary, goals, debts, recurring, reports, rates, sandbox
+  routes/           API routes: expenses, income, categories, budget, summary, goals, debts, recurring, reports, rates, data, sandbox
 src/
   App.tsx           Page switching
   pages/            Dashboard, Expenses, Income, Categories, Budgets (and budgets/ method panels), Recurring, Goals, Debts, Reports, Settings
@@ -197,7 +200,12 @@ All routes are under `/api`. In demo mode only, every request except `/api/healt
 | `GET /api/reports`        | Income and spending per month and per category for the last `months` months (1–24, default 6).      |
 | `GET /api/summary`        | Dashboard figures for the current month, converted into the `currency` query parameter (default `USD`). |
 | `POST /api/sandbox/reset` | Demo mode only: replace the sandbox's data with a fresh copy of the demo data.                      |
-| `GET /api/rates`          | Current exchange rates (base `USD`) and when the provider last updated them.                        |
+| `GET /api/rates`          | Current exchange rates (base `USD`), when the provider dated them (`updatedAt`), when this server last fetched them (`fetchedAt`) and whether the provider was unreachable on the latest try so an older copy is used (`stale`). |
+| `POST /api/rates/refresh` | Fetch the rates again now (at most once a minute; within that time the current ones are returned). Same response as `GET /api/rates`. |
+| `GET /api/data/export`    | Everything in the current dataset as one JSON backup (`app: "expenser"`, `version`, budget, categories, expenses, income, category limits, goals, debts, recurring). |
+| `GET /api/data/export/expenses.csv`, `GET /api/data/export/income.csv` | The expenses or the income as CSV (UTF-8 with a byte-order mark; amounts in major units, text that starts like a formula is prefixed with `'`). |
+| `POST /api/data/import`   | Replace the current data with a backup in the format above. Every row is validated first; a bad file returns `400` and changes nothing. In demo mode the usual caps apply. |
+| `DELETE /api/data`        | Delete everything in the current dataset and restore the default categories.                       |
 
 Due recurring items are turned into expenses and income whenever the data is read, so no scheduler is needed.
 

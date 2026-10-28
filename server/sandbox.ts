@@ -39,7 +39,8 @@ const lastTouched = new Map<string, number>()
 // Setups in progress, so a page that fires several requests at once seeds the data only once.
 const creating = new Map<string, Promise<void>>()
 
-async function wipe(sandbox: string | string[]) {
+/** Deletes everything stored for a sandbox (or several), or the single dataset outside demo mode (`null`). */
+export async function wipe(sandbox: string | string[] | null) {
   const filter = Array.isArray(sandbox) ? { sandbox: { $in: sandbox } } : { sandbox }
   await Promise.all([
     Expense.deleteMany(filter),
@@ -103,6 +104,12 @@ export const sandboxOf = (res: Response): string | null => res.locals.sandbox ??
 export async function seedLocalCategories() {
   if (await Category.exists({ sandbox: null })) return
   await Category.insertMany(DEFAULT_CATEGORIES.map((name) => ({ sandbox: null, name })))
+}
+
+/** Deletes all the data of a sandbox (`null`: the single dataset) and leaves only the default categories. */
+export async function clearData(sandbox: string | null) {
+  await wipe(sandbox)
+  await Category.insertMany(DEFAULT_CATEGORIES.map((name) => ({ sandbox, name })))
 }
 
 /** Throws away this sandbox's data and starts it over with the demo data. */

@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { NavId } from '../../config/navigation.ts'
-import { useTheme } from '../../hooks/useTheme.ts'
 import { Header } from './Header.tsx'
 import { Sidebar } from './Sidebar.tsx'
 
@@ -13,7 +12,6 @@ interface AppLayoutProps {
 export function AppLayout({ active, onNavigate, children }: AppLayoutProps) {
   // Only meaningful below the desktop breakpoint, where the sidebar is a drawer.
   const [menuOpen, setMenuOpen] = useState(false)
-  const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
     if (!menuOpen) return
@@ -33,8 +31,6 @@ export function AppLayout({ active, onNavigate, children }: AppLayoutProps) {
     <div className="grid min-h-svh grid-cols-1 grid-rows-[var(--header-h)_1fr] nav:grid-cols-[var(--sidebar-w)_minmax(0,1fr)]">
       <Header
         menuOpen={menuOpen}
-        theme={theme}
-        onThemeToggle={toggleTheme}
         onMenuToggle={() => setMenuOpen((open) => !open)}
         onAddExpense={() => handleSelect('expenses')}
       />

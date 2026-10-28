@@ -22,8 +22,6 @@ export const en = {
   'header.addExpense': 'Add expense',
   'header.openNav': 'Open navigation',
   'header.closeNav': 'Close navigation',
-  'header.toLight': 'Switch to light mode',
-  'header.toDark': 'Switch to dark mode',
   'header.account': 'Account',
 
   'dashboard.title': 'Dashboard',
@@ -321,11 +319,52 @@ export const en = {
   'reports.vsPrevious': '{change} vs the month before',
 
   'settings.title': 'Settings',
-  'settings.subtitle': 'Choose the language and currency used throughout the app.',
+  'settings.subtitle': 'Language, currency, appearance, exchange rates and your data.',
   'settings.language': 'Language',
   'settings.currency': 'Currency',
   'settings.currencyNote':
     'Amounts are shown in this currency. Expenses entered in another currency are converted using the current exchange rates, and each one keeps the amount it was entered in.',
+
+  'settings.entryCurrency': 'Default currency for new entries',
+  'settings.entryCurrencySame': 'Same as display currency',
+  'settings.entryCurrencyNote':
+    'New expenses, income, recurring items, goals and debts start in this currency. You can still change it on each form.',
+  'settings.theme': 'Theme',
+  'settings.themeLight': 'Light',
+  'settings.themeDark': 'Dark',
+  'settings.themeSystem': 'Match system',
+
+  'settings.ratesTitle': 'Exchange rates',
+  'settings.ratesUnavailable': 'Exchange rates are not available right now. Amounts in other currencies are shown unconverted.',
+  'settings.ratesStale':
+    "The rate provider couldn't be reached, so the last saved rates are being used. Converted amounts may be out of date.",
+  'settings.ratesUpdated': 'Rates dated {date}. Last checked {checked}.',
+  'settings.ratesNote': 'Rates come from open.er-api.com and are saved for up to 6 hours.',
+  'settings.ratesRefresh': 'Refresh rates',
+  'settings.ratesRefreshing': 'Refreshing…',
+  'settings.ratesRefreshError': "Couldn't refresh the rates: {error}",
+
+  'settings.dataTitle': 'Your data',
+  'settings.dataNote':
+    'Download a backup of everything you have entered, or restore one. A backup is a JSON file; the CSV files hold just the expenses or the income, for spreadsheets.',
+  'settings.exportBackup': 'Download backup (JSON)',
+  'settings.exportExpenses': 'Expenses (CSV)',
+  'settings.exportIncome': 'Income (CSV)',
+  'settings.exportError': "Couldn't download the file: {error}",
+  'settings.importBackup': 'Restore from backup…',
+  'settings.importTitle': 'Restore this backup?',
+  'settings.importBody': 'Everything you have now is replaced by the contents of {file}.',
+  'settings.importConfirm': 'Restore',
+  'settings.importDone': 'Backup restored.',
+  'settings.importError': "Couldn't restore the backup: {error}",
+  'settings.importBadFile': 'That file is not a valid JSON backup.',
+  'settings.deleteData': 'Delete all my data',
+  'settings.deleteTitle': 'Delete all your data?',
+  'settings.deleteBody':
+    'All expenses, income, budgets, goals, debts and recurring items are removed, and only the default categories remain. This cannot be undone, so download a backup first.',
+  'settings.deleteConfirm': 'Delete everything',
+  'settings.deleteDone': 'All data deleted.',
+  'settings.deleteError': "Couldn't delete the data: {error}",
 
   'settings.demoTitle': 'Demo data',
   'settings.demoNote': 'This is a demo. Your expenses are private to this browser and are deleted after a week of inactivity.',

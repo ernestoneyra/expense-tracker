@@ -35,6 +35,7 @@ export const amountStepFor = (currency: Currency) => 10 ** -fractionDigitsFor(cu
 
 export const LANGUAGE_STORAGE_KEY = 'expenser-language'
 export const CURRENCY_STORAGE_KEY = 'expenser-currency'
+export const ENTRY_CURRENCY_STORAGE_KEY = 'expenser-entry-currency'
 
 export const isLanguage = (value: unknown): value is Language =>
   LANGUAGES.some((l) => l.code === value)

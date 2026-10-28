@@ -6,6 +6,10 @@ export interface Rates {
   rates: Record<Currency, number>
   /** When the provider last updated the rates (ISO). */
   updatedAt: string
+  /** When this server last fetched them from the provider (ISO). */
+  fetchedAt: string
+  /** The provider couldn't be reached on the latest try, so these are an older saved copy. */
+  stale: boolean
 }
 
 export interface Preferences {
@@ -14,6 +18,12 @@ export interface Preferences {
   /** The currency amounts are shown in. */
   currency: Currency
   setCurrency: (currency: Currency) => void
+  /** The currency forms start with: the one picked in Settings, or the display currency if none was. */
+  entryCurrency: Currency
+  /** Whether Settings has picked an entry currency of its own (otherwise it follows the display currency). */
+  hasEntryCurrency: boolean
+  /** Pass `undefined` to follow the display currency again. */
+  setEntryCurrency: (currency: Currency | undefined) => void
   locale: string
   /** Translate a message; `{name}` placeholders are filled from `params`, and a numeric `count` selects the plural form. */
   t: (key: MessageKey, params?: Record<string, string | number>) => string
@@ -27,6 +37,11 @@ export interface Preferences {
   formatIn: (cents: number, currency: Currency) => string
   /** Whether amounts in other currencies can currently be converted. */
   ratesReady: boolean
+  /** The rates in use and how fresh they are; undefined while loading or when none could be fetched. */
+  ratesInfo: Rates | undefined
+  ratesLoading: boolean
+  /** Asks the server to fetch new rates now, then reloads them. Rejects if the request fails. */
+  refreshRates: () => Promise<void>
   /** Format a calendar day stored as UTC midnight. */
   formatDate: (iso: string) => string
   /** Format a ratio as a whole percentage, e.g. 0.42 → "42%". */

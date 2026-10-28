@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import {
   CURRENCY_STORAGE_KEY,
   DEFAULT_CURRENCY,
+  ENTRY_CURRENCY_STORAGE_KEY,
   LANGUAGES,
   LANGUAGE_STORAGE_KEY,
   detectLanguage,
@@ -11,7 +12,7 @@ import {
   type Currency,
   type Language,
 } from './config.ts'
-import { useApi } from '../lib/api.ts'
+import { api, useApi } from '../lib/api.ts'
 import { PreferencesContext, type Preferences, type Rates } from './PreferencesContext.ts'
 
 function readSaved<T>(key: string, isValid: (value: unknown) => value is T): T | undefined {
@@ -23,9 +24,10 @@ function readSaved<T>(key: string, isValid: (value: unknown) => value is T): T |
   }
 }
 
-function save(key: string, value: string) {
+function save(key: string, value: string | undefined) {
   try {
-    localStorage.setItem(key, value)
+    if (value === undefined) localStorage.removeItem(key)
+    else localStorage.setItem(key, value)
   } catch {
     // Ignore: the choice just won't persist.
   }
@@ -39,9 +41,18 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     () => readSaved(CURRENCY_STORAGE_KEY, isCurrency) ?? DEFAULT_CURRENCY,
   )
 
+  const [savedEntryCurrency, setSavedEntryCurrency] = useState<Currency | undefined>(() =>
+    readSaved(ENTRY_CURRENCY_STORAGE_KEY, isCurrency),
+  )
+
   // Exchange rates come from the server (which caches them); without them, amounts in a
   // currency other than the display one are shown unconverted.
-  const { data: rates } = useApi<Rates>('/rates')
+  const { data: rates, loading: ratesLoading, reload: reloadRates } = useApi<Rates>('/rates')
+
+  const refreshRates = useCallback(async () => {
+    await api('/rates/refresh', { method: 'POST' })
+    reloadRates()
+  }, [reloadRates])
 
   // The lang attribute also lets the browser pick the right CJK glyph variants.
   useEffect(() => {
@@ -56,6 +67,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const setCurrency = useCallback((next: Currency) => {
     save(CURRENCY_STORAGE_KEY, next)
     setCurrencyState(next)
+  }, [])
+
+  const setEntryCurrency = useCallback((next: Currency | undefined) => {
+    save(ENTRY_CURRENCY_STORAGE_KEY, next)
+    setSavedEntryCurrency(next)
   }, [])
 
   const value = useMemo<Preferences>(() => {
@@ -78,6 +94,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setLanguage,
       currency,
       setCurrency,
+      entryCurrency: savedEntryCurrency ?? currency,
+      hasEntryCurrency: savedEntryCurrency !== undefined,
+      setEntryCurrency,
       t: (key, params) => {
         let template = dictionary[key]
         if (typeof params?.count === 'number') {
@@ -100,6 +119,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
             : formatterFor(from).format(cents / 100),
       formatIn: (cents, c) => formatterFor(c).format(cents / 100),
       ratesReady: rates !== undefined,
+      ratesInfo: rates,
+      ratesLoading,
+      refreshRates,
       // Dates are calendar days stored at UTC midnight, so format in UTC to avoid off-by-one shifts.
       formatDate: (iso) =>
         new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }),
@@ -116,7 +138,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       categoryName: (name) => dictionary[`category.${name}`] ?? name,
       currencyName: (c) => currencyNames.of(c) ?? c,
     }
-  }, [language, currency, rates, setLanguage, setCurrency])
+  }, [language, currency, savedEntryCurrency, rates, ratesLoading, refreshRates, setLanguage, setCurrency, setEntryCurrency])
 
   return <PreferencesContext value={value}>{children}</PreferencesContext>
 }

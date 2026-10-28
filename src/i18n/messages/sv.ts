@@ -21,8 +21,6 @@ export const sv: Messages = {
   'header.addExpense': 'Lägg till utgift',
   'header.openNav': 'Öppna navigeringen',
   'header.closeNav': 'Stäng navigeringen',
-  'header.toLight': 'Byt till ljust läge',
-  'header.toDark': 'Byt till mörkt läge',
   'header.account': 'Konto',
 
   'dashboard.title': 'Översikt',
@@ -319,11 +317,52 @@ export const sv: Messages = {
   'reports.vsPrevious': '{change} jämfört med månaden innan',
 
   'settings.title': 'Inställningar',
-  'settings.subtitle': 'Välj vilket språk och vilken valuta som används i appen.',
+  'settings.subtitle': 'Språk, valuta, utseende, växelkurser och dina data.',
   'settings.language': 'Språk',
   'settings.currency': 'Valuta',
   'settings.currencyNote':
     'Belopp visas i den här valutan. Utgifter som angetts i en annan valuta räknas om med aktuella växelkurser, och varje utgift behåller beloppet den angavs med.',
+
+  'settings.entryCurrency': 'Standardvaluta för nya poster',
+  'settings.entryCurrencySame': 'Samma som visningsvalutan',
+  'settings.entryCurrencyNote':
+    'Nya utgifter, inkomster, återkommande poster, mål och skulder börjar i den här valutan. Du kan ändra den i varje formulär.',
+  'settings.theme': 'Tema',
+  'settings.themeLight': 'Ljust',
+  'settings.themeDark': 'Mörkt',
+  'settings.themeSystem': 'Följ systemet',
+
+  'settings.ratesTitle': 'Växelkurser',
+  'settings.ratesUnavailable': 'Växelkurser är inte tillgängliga just nu. Belopp i andra valutor visas utan omräkning.',
+  'settings.ratesStale':
+    'Det gick inte att nå kursleverantören, så de senast sparade kurserna används. Omräknade belopp kan vara inaktuella.',
+  'settings.ratesUpdated': 'Kurser från {date}. Senast kontrollerade {checked}.',
+  'settings.ratesNote': 'Kurserna kommer från open.er-api.com och sparas i upp till 6 timmar.',
+  'settings.ratesRefresh': 'Uppdatera kurser',
+  'settings.ratesRefreshing': 'Uppdaterar…',
+  'settings.ratesRefreshError': 'Kunde inte uppdatera kurserna: {error}',
+
+  'settings.dataTitle': 'Dina data',
+  'settings.dataNote':
+    'Ladda ner en säkerhetskopia av allt du har lagt in, eller återställ en. Säkerhetskopian är en JSON-fil; CSV-filerna innehåller bara utgifterna eller inkomsterna, för kalkylprogram.',
+  'settings.exportBackup': 'Ladda ner säkerhetskopia (JSON)',
+  'settings.exportExpenses': 'Utgifter (CSV)',
+  'settings.exportIncome': 'Inkomster (CSV)',
+  'settings.exportError': 'Kunde inte ladda ner filen: {error}',
+  'settings.importBackup': 'Återställ från säkerhetskopia…',
+  'settings.importTitle': 'Återställa den här säkerhetskopian?',
+  'settings.importBody': 'Allt du har nu ersätts av innehållet i {file}.',
+  'settings.importConfirm': 'Återställ',
+  'settings.importDone': 'Säkerhetskopian har återställts.',
+  'settings.importError': 'Kunde inte återställa säkerhetskopian: {error}',
+  'settings.importBadFile': 'Filen är inte en giltig JSON-säkerhetskopia.',
+  'settings.deleteData': 'Radera alla mina data',
+  'settings.deleteTitle': 'Radera alla dina data?',
+  'settings.deleteBody':
+    'Alla utgifter, inkomster, budgetar, mål, skulder och återkommande poster tas bort och bara standardkategorierna finns kvar. Det går inte att ångra, så ladda ner en säkerhetskopia först.',
+  'settings.deleteConfirm': 'Radera allt',
+  'settings.deleteDone': 'Alla data har raderats.',
+  'settings.deleteError': 'Kunde inte radera data: {error}',
 
   'settings.demoTitle': 'Demodata',
   'settings.demoNote': 'Det här är en demo. Dina utgifter är privata för den här webbläsaren och raderas efter en veckas inaktivitet.',

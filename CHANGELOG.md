@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Settings: a **default currency for new entries**. New expenses, income, recurring items, goals and debts start in it instead of the display currency; by default it still follows the display currency.
+- Settings: a **theme** choice of Light, Dark or Match system.
+- Settings: **backup and restore**. Download everything as a JSON backup, or the expenses or income as CSV; restore a backup (it replaces the current data and is fully validated before anything is deleted); and **Delete all my data**, which leaves the default categories. New endpoints `GET /api/data/export`, `GET /api/data/export/expenses.csv`, `GET /api/data/export/income.csv`, `POST /api/data/import` and `DELETE /api/data`.
+- Settings: **exchange-rate status**. Shows the date of the rates and when they were last checked, warns when the provider can't be reached and the last saved rates are in use, and has a **Refresh rates** button (`POST /api/rates/refresh`, at most once a minute). `GET /api/rates` now also returns `fetchedAt` and `stale`.
+
+### Changed
+
+- The theme button is gone from the header; the theme is now chosen in Settings.
+- The server accepts request bodies up to 10 MB on `/api/data` (for backups); every other route keeps the 100 kB default. A body that is too large or not valid JSON now gets a `413` or `400` with a message instead of a generic `500`.
+
 ## [0.7.0] - 2026-10-28
 
 ### Added

@@ -9,12 +9,12 @@ import { api, useApi, type Income as IncomeEntry, type NewIncome } from '../lib/
 import { toCents, today } from '../lib/money.ts'
 
 export function Income() {
-  const { t, formatMoney, formatIn, ratesReady, formatDate, currency } = usePreferences()
+  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, entryCurrency: defaultEntryCurrency } = usePreferences()
   const { data: entries, error, loading, reload } = useApi<IncomeEntry[]>('/income')
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(today)
   const [amount, setAmount] = useState('')
-  const [entryCurrency, setEntryCurrency] = useState(currency)
+  const [entryCurrency, setEntryCurrency] = useState(defaultEntryCurrency)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string>()
 

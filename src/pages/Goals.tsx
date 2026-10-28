@@ -13,12 +13,12 @@ import { toCents, today } from '../lib/money.ts'
 type Kind = 'savings' | 'emergency'
 
 export function Goals() {
-  const { t, formatMoney, formatIn, formatDate, formatPercent, currency } = usePreferences()
+  const { t, formatMoney, formatIn, formatDate, formatPercent, currency, entryCurrency } = usePreferences()
   const { data, error, loading, reload } = useApi<GoalsResponse>(`/goals?currency=${currency}`)
   const [kind, setKind] = useState<Kind>('savings')
   const [name, setName] = useState('')
   const [target, setTarget] = useState('')
-  const [targetCurrency, setTargetCurrency] = useState(currency)
+  const [targetCurrency, setTargetCurrency] = useState(entryCurrency)
   const [months, setMonths] = useState('')
   const [deadline, setDeadline] = useState('')
   const [submitting, setSubmitting] = useState(false)
