@@ -7,7 +7,7 @@ import { PageHeader } from '../components/ui/PageHeader.tsx'
 import { categoryIcon } from '../config/categoryIcons.ts'
 import type { MessageKey } from '../i18n/config.ts'
 import { usePreferences } from '../i18n/PreferencesContext.ts'
-import { api, useApi, type Category } from '../lib/api.ts'
+import { api, useApi, type Category, type CostType, type Necessity } from '../lib/api.ts'
 
 type SortKey = 'name' | 'frequency'
 
@@ -25,6 +25,8 @@ const sortOptions: { key: SortKey; labelKey: MessageKey }[] = [
   { key: 'name', labelKey: 'categories.sortName' },
   { key: 'frequency', labelKey: 'categories.sortFrequency' },
 ]
+
+const selectClass = 'min-h-9 rounded-[10px] border border-line bg-surface px-2 text-sm text-body'
 
 export function Categories() {
   const { t, locale, categoryName } = usePreferences()
@@ -54,6 +56,17 @@ export function Categories() {
     setPendingDelete(undefined)
     try {
       await api(`/categories/${c.id}`, { method: 'DELETE' })
+      setFormError(undefined)
+      reload()
+    } catch (err) {
+      setFormError((err as Error).message)
+    }
+  }
+
+  // An empty choice clears the classification.
+  const classify = async (c: Category, field: 'costType' | 'necessity', value: CostType | Necessity | '') => {
+    try {
+      await api(`/categories/${c.id}`, { method: 'PATCH', body: JSON.stringify({ [field]: value || null }) })
       setFormError(undefined)
       reload()
     } catch (err) {
@@ -133,7 +146,7 @@ export function Categories() {
             {sorted.map((c) => (
               <li
                 key={c.id}
-                className="flex items-center justify-between gap-3 border-t border-line py-3"
+                className="flex flex-wrap items-center justify-between gap-3 border-t border-line py-3"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-text">
@@ -146,9 +159,31 @@ export function Categories() {
                     </span>
                   </div>
                 </div>
-                <IconButton onClick={() => setPendingDelete(c)} aria-label={t('categories.deleteLabel', { name: categoryName(c.name) })}>
-                  <Icon name="close" size={18} />
-                </IconButton>
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                  <select
+                    value={c.costType ?? ''}
+                    onChange={(e) => classify(c, 'costType', e.target.value as CostType | '')}
+                    aria-label={t('categories.costTypeLabel', { name: categoryName(c.name) })}
+                    className={selectClass}
+                  >
+                    <option value="">{t('categories.costType')}</option>
+                    <option value="fixed">{t('categories.fixed')}</option>
+                    <option value="variable">{t('categories.variable')}</option>
+                  </select>
+                  <select
+                    value={c.necessity ?? ''}
+                    onChange={(e) => classify(c, 'necessity', e.target.value as Necessity | '')}
+                    aria-label={t('categories.necessityLabel', { name: categoryName(c.name) })}
+                    className={selectClass}
+                  >
+                    <option value="">{t('categories.necessity')}</option>
+                    <option value="need">{t('categories.need')}</option>
+                    <option value="want">{t('categories.want')}</option>
+                  </select>
+                  <IconButton onClick={() => setPendingDelete(c)} aria-label={t('categories.deleteLabel', { name: categoryName(c.name) })}>
+                    <Icon name="close" size={18} />
+                  </IconButton>
+                </div>
               </li>
             ))}
           </ul>

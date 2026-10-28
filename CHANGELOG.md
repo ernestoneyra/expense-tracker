@@ -5,14 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] - 2026-10-27
+## [0.7.0] - 2026-10-28
 
 ### Added
 
 - Icons for the ten default categories, shown on the Categories page and next to the category in the expense lists on the Dashboard and Expenses pages. Categories you create yourself get a generic tag icon.
+- **Income** page: record money coming in. The dashboard gains income, net and savings-rate figures once there is income this month, and lists categories that have gone over their limit.
+- **Budgets** page with four budgeting methods: category limits, a percentage split between needs, wants and savings (the classic 50/30/20 pre-fills the form), zero-based, and pay yourself first. It also shows this month's pace, and fixed versus variable spending. The existing monthly budget on the dashboard is unchanged.
+- Categories can be marked fixed or variable and as a need or a want. Nothing is classified by default.
+- **Recurring** page: bills, subscriptions and paychecks repeating weekly, monthly or yearly, which become real expense or income entries when due. Yearly bills show the monthly sinking-fund amount.
+- **Goals** page: savings goals with an optional deadline and an emergency fund sized in months of your own average spending, with deposits and withdrawals.
+- **Debts** page: balances, rates and payments, with avalanche and snowball payoff plans and an optional extra monthly payment.
+- **Reports** page: income, spending, net and savings rate for the last 3, 6 or 12 months, by month and by category.
+- New features start empty and contain no sample amounts or data; in demo mode they are cleared by "Reset demo data" too (capped at 100 records per kind per sandbox).
 
 ### Changed
 
+- The Budgets, Reports and Recurring pages are no longer placeholders, and the placeholder page is gone.
+- The demo reset text now says that everything you entered is removed.
 - The ten default categories are now shown in the selected language (English, Svenska, 日本語 and 繁體中文（台灣）) on the Dashboard, Expenses and Categories pages and in the category picker. Categories you create yourself are shown as typed, and the stored names stay in English. Sorting categories by name follows the selected language.
 
 ### Fixed
@@ -54,6 +64,6 @@ First tracked release of Expenser, a personal expense tracker.
 - `.env.example` and a README with screenshots, a feature list and setup instructions.
 - Placeholder pages for Budgets, Reports and Recurring expenses.
 
-[0.6.1]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.0...0.6.1
+[0.7.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/ernestoneyra/expense-tracker/releases/tag/0.5.0

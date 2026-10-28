@@ -29,6 +29,10 @@ export interface Preferences {
   ratesReady: boolean
   /** Format a calendar day stored as UTC midnight. */
   formatDate: (iso: string) => string
+  /** Format a ratio as a whole percentage, e.g. 0.42 → "42%". */
+  formatPercent: (ratio: number) => string
+  /** Format a "YYYY-MM" month as e.g. "Oct 2026". */
+  formatMonth: (month: string) => string
   /** Display name of a stored category: the seeded defaults are translated, custom ones are returned as typed. */
   categoryName: (name: string) => string
   /** Localised currency name, e.g. "Japanese Yen". */

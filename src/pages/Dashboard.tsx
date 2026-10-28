@@ -9,7 +9,7 @@ import { usePreferences } from '../i18n/PreferencesContext.ts'
 import { api, useApi, type Summary } from '../lib/api.ts'
 
 export function Dashboard() {
-  const { t, formatMoney, formatIn, ratesReady, formatDate, currency, categoryName } = usePreferences()
+  const { t, formatMoney, formatIn, formatPercent, ratesReady, formatDate, currency, categoryName } = usePreferences()
   // Amounts come back converted into the display currency, so changing it refetches.
   const { data, error, loading, reload } = useApi<Summary>(`/summary?currency=${currency}`)
   const [editingBudget, setEditingBudget] = useState(false)
@@ -57,6 +57,19 @@ export function Dashboard() {
       label: t('dashboard.transactions'),
       value: String(data.transactions),
       hint: t('dashboard.thisMonth'),
+    },
+  ]
+
+  // Only shown once there is income this month to compare against.
+  const net = data.incomeCents - data.spentCents
+  const cashFlow = [
+    { id: 'income', label: t('dashboard.income'), value: formatMoney(data.incomeCents), hint: t('dashboard.thisMonth') },
+    { id: 'net', label: t('dashboard.net'), value: formatMoney(net), hint: t('dashboard.netHint') },
+    {
+      id: 'rate',
+      label: t('dashboard.savingsRate'),
+      value: formatPercent(net / data.incomeCents),
+      hint: t('dashboard.savingsRateHint'),
     },
   ]
 
@@ -149,6 +162,41 @@ export function Dashboard() {
           </Card>
         ))}
       </section>
+
+      {data.incomeCents > 0 && (
+        <section className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-3 nav:gap-4" aria-label={t('dashboard.cashFlow')}>
+          {cashFlow.map((s) => (
+            <Card key={s.id} className="flex flex-col gap-1 p-3.5 min-[420px]:p-4.5">
+              <p className="text-sm text-muted">{s.label}</p>
+              <p className={`truncate text-xl font-bold tracking-tight min-[420px]:text-2xl ${s.id !== 'income' && net < 0 ? 'text-red-500' : 'text-strong'}`}>
+                {s.value}
+              </p>
+              <p className="text-[13px] text-muted">{s.hint}</p>
+            </Card>
+          ))}
+        </section>
+      )}
+
+      {data.overBudget.length > 0 && (
+        <Card className="px-5 pt-2 pb-3" aria-labelledby="over-title">
+          <h2 id="over-title" className="pt-3.5 pb-2 text-[17px] font-semibold text-strong">
+            {t('dashboard.overBudget')}
+          </h2>
+          <ul className="m-0 list-none p-0">
+            {data.overBudget.map((c) => (
+              <li key={c.name} className="flex items-center justify-between gap-4 border-t border-line py-3">
+                <span className="flex min-w-0 items-center gap-1.5 font-medium text-strong">
+                  <Icon name={categoryIcon(c.name)} size={15} className="shrink-0 text-muted" />
+                  <span className="truncate">{categoryName(c.name)}</span>
+                </span>
+                <span className="shrink-0 text-sm text-red-500 tabular-nums">
+                  {t('dashboard.overBy', { amount: formatMoney(c.spentCents - c.limitCents), limit: formatMoney(c.limitCents) })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card className="px-5 pt-2 pb-3" aria-labelledby="recent-title">
         <h2 id="recent-title" className="pt-3.5 pb-2 text-[17px] font-semibold text-strong">

@@ -5,11 +5,22 @@ import mongoose from 'mongoose'
 import { connectDb } from './db.ts'
 import { Budget } from './models/Budget.ts'
 import { Category } from './models/Category.ts'
+import { CategoryBudget } from './models/CategoryBudget.ts'
+import { Debt } from './models/Debt.ts'
 import { Expense } from './models/Expense.ts'
+import { Goal } from './models/Goal.ts'
+import { Income } from './models/Income.ts'
+import { Recurring } from './models/Recurring.ts'
 import { budgetRouter } from './routes/budget.ts'
 import { categoriesRouter } from './routes/categories.ts'
+import { debtsRouter } from './routes/debts.ts'
 import { expensesRouter } from './routes/expenses.ts'
+import { goalsRouter } from './routes/goals.ts'
+import { incomeRouter } from './routes/income.ts'
 import { ratesRouter } from './routes/rates.ts'
+import { recurringRouter } from './routes/recurring.ts'
+import { reportsRouter } from './routes/reports.ts'
+import { recurringMiddleware } from './recurring.ts'
 import { RatesUnavailableError } from './rates.ts'
 import { sandboxRouter } from './routes/sandbox.ts'
 import { summaryRouter } from './routes/summary.ts'
@@ -32,10 +43,20 @@ if (DEMO_MODE) {
   app.use('/api', sandboxMiddleware)
   app.use('/api/sandbox', sandboxRouter)
 }
+// Bills and paychecks that have fallen due become real entries before anything reads them.
+app.use(
+  ['/api/expenses', '/api/income', '/api/budget', '/api/summary', '/api/goals', '/api/debts', '/api/recurring', '/api/reports'],
+  recurringMiddleware,
+)
 app.use('/api/expenses', expensesRouter)
+app.use('/api/income', incomeRouter)
 app.use('/api/categories', categoriesRouter)
 app.use('/api/budget', budgetRouter)
 app.use('/api/summary', summaryRouter)
+app.use('/api/goals', goalsRouter)
+app.use('/api/debts', debtsRouter)
+app.use('/api/recurring', recurringRouter)
+app.use('/api/reports', reportsRouter)
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' })
 })
@@ -73,7 +94,9 @@ try {
   await connectDb()
   // Drop indexes the schemas no longer define, e.g. the old global-unique category name, which
   // would otherwise stop two sandboxes from having a category with the same name.
-  await Promise.all([Budget.syncIndexes(), Category.syncIndexes(), Expense.syncIndexes()])
+  await Promise.all(
+    [Budget, Category, CategoryBudget, Debt, Expense, Goal, Income, Recurring].map((m) => m.syncIndexes()),
+  )
   if (!DEMO_MODE) await seedLocalCategories()
 } catch (err) {
   console.error('Failed to connect to MongoDB:', err instanceof Error ? err.message : err)

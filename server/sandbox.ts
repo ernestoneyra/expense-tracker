@@ -3,7 +3,12 @@ import { model, Schema } from 'mongoose'
 import { DEFAULT_CATEGORIES, DEMO_BUDGET, demoExpenses } from './demo.ts'
 import { Budget } from './models/Budget.ts'
 import { Category } from './models/Category.ts'
+import { CategoryBudget } from './models/CategoryBudget.ts'
+import { Debt } from './models/Debt.ts'
 import { Expense } from './models/Expense.ts'
+import { Goal } from './models/Goal.ts'
+import { Income } from './models/Income.ts'
+import { Recurring } from './models/Recurring.ts'
 
 // With DEMO_MODE=true every visitor gets a private copy of the data, keyed by a random id their
 // browser sends in the X-Sandbox-Id header. There are no accounts: the id is the only thing that
@@ -15,6 +20,8 @@ export const DEMO_MODE = process.env.DEMO_MODE === 'true'
 /** Per-sandbox caps so a single visitor can't fill the database. */
 export const MAX_EXPENSES = 500
 export const MAX_CATEGORIES = 50
+/** The same cap for each of income, category limits, goals, debts and recurring items. */
+export const MAX_RECORDS = 100
 
 const RETENTION_MS = 7 * 24 * 60 * 60 * 1000
 const TOUCH_INTERVAL_MS = 60 * 60 * 1000
@@ -34,7 +41,16 @@ const creating = new Map<string, Promise<void>>()
 
 async function wipe(sandbox: string | string[]) {
   const filter = Array.isArray(sandbox) ? { sandbox: { $in: sandbox } } : { sandbox }
-  await Promise.all([Expense.deleteMany(filter), Category.deleteMany(filter), Budget.deleteMany(filter)])
+  await Promise.all([
+    Expense.deleteMany(filter),
+    Category.deleteMany(filter),
+    Budget.deleteMany(filter),
+    CategoryBudget.deleteMany(filter),
+    Income.deleteMany(filter),
+    Goal.deleteMany(filter),
+    Debt.deleteMany(filter),
+    Recurring.deleteMany(filter),
+  ])
 }
 
 async function populate(sandbox: string) {

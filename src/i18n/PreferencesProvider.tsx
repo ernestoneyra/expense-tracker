@@ -64,6 +64,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     const plurals = new Intl.PluralRules(locale)
     const money = new Intl.NumberFormat(locale, { style: 'currency', currency })
     const currencyNames = new Intl.DisplayNames(locale, { type: 'currency' })
+    const percent = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 })
     const formatters = new Map<Currency, Intl.NumberFormat>([[currency, money]])
     const formatterFor = (c: Currency) => {
       let f = formatters.get(c)
@@ -102,6 +103,15 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       // Dates are calendar days stored at UTC midnight, so format in UTC to avoid off-by-one shifts.
       formatDate: (iso) =>
         new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+      formatPercent: (ratio) => percent.format(ratio),
+      formatMonth: (month) => {
+        const [year, m] = month.split('-').map(Number)
+        return new Date(Date.UTC(year, m - 1, 1)).toLocaleDateString(locale, {
+          month: 'short',
+          year: 'numeric',
+          timeZone: 'UTC',
+        })
+      },
       // Categories are stored (and referenced by expenses) under their English default name.
       categoryName: (name) => dictionary[`category.${name}`] ?? name,
       currencyName: (c) => currencyNames.of(c) ?? c,
