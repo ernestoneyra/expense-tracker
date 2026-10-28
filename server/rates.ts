@@ -9,6 +9,7 @@ export const isCurrency = (value: unknown): value is Currency =>
 // Free daily rates (https://www.exchangerate-api.com), no API key. Covers all of CURRENCIES.
 const SOURCE = 'https://open.er-api.com/v6/latest/USD'
 const MAX_AGE_MS = 6 * 60 * 60 * 1000
+const MIN_REFRESH_MS = 60 * 1000
 
 export interface Rates {
   /** Units of each currency per 1 USD. */
@@ -25,6 +26,7 @@ export class RatesUnavailableError extends Error {
 
 let cached: (Rates & { fetchedAt: number }) | undefined
 let inflight: Promise<Rates> | undefined
+let lastFetchFailed = false
 
 async function fetchRates(): Promise<Rates> {
   try {
@@ -55,14 +57,14 @@ async function requestRates(): Promise<Rates> {
   return { rates, updatedAt: updated.toISOString() }
 }
 
-/** Current rates, refreshed at most every few hours. Falls back to the last good copy if the provider is down. */
-export async function getRates(): Promise<Rates> {
-  if (cached && Date.now() - cached.fetchedAt < MAX_AGE_MS) return cached
+async function load(force: boolean): Promise<Rates> {
+  if (!force && cached && Date.now() - cached.fetchedAt < MAX_AGE_MS) return cached
 
   // Concurrent callers share one request.
   inflight ??= fetchRates()
     .then((fresh) => {
       cached = { ...fresh, fetchedAt: Date.now() }
+      lastFetchFailed = false
       return fresh
     })
     .finally(() => {
@@ -72,12 +74,30 @@ export async function getRates(): Promise<Rates> {
   try {
     return await inflight
   } catch (err) {
+    lastFetchFailed = true
     // Node's fetch hides the real reason (ENOTFOUND, ETIMEDOUT, certificate errors…) in `cause`.
     const cause = err instanceof Error && err.cause instanceof Error ? ` (${err.cause.message})` : ''
     console.error(`Failed to fetch exchange rates: ${err instanceof Error ? err.message : err}${cause}`)
     if (cached) return cached
     throw new RatesUnavailableError()
   }
+}
+
+/** Current rates, refreshed at most every few hours. Falls back to the last good copy if the provider is down. */
+export const getRates = () => load(false)
+
+export interface RatesStatus extends Rates {
+  /** When this server last fetched the rates from the provider (ISO). */
+  fetchedAt: string
+  /** The latest attempt to reach the provider failed, so these are an older saved copy. */
+  stale: boolean
+}
+
+/** The rates plus how fresh they are. `refresh` asks the provider again, but not more than once a minute. */
+export async function getRatesStatus(refresh = false): Promise<RatesStatus> {
+  await load(refresh && (!cached || Date.now() - cached.fetchedAt >= MIN_REFRESH_MS))
+  const { rates, updatedAt, fetchedAt } = cached!
+  return { rates, updatedAt, fetchedAt: new Date(fetchedAt).toISOString(), stale: lastFetchFailed }
 }
 
 /** Convert an amount in minor units. Every currency uses the same ×100 storage, so this is a plain ratio. */

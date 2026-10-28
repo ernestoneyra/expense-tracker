@@ -1,29 +1,13 @@
 import { Router } from 'express'
 import { Budget } from '../models/Budget.ts'
 import { Expense } from '../models/Expense.ts'
-import {
-  convertCents,
-  DEFAULT_CURRENCY,
-  getRates,
-  isCurrency,
-  type Currency,
-  type Rates,
-} from '../rates.ts'
+import { Income } from '../models/Income.ts'
+import { converterTo, currencyOf, currencyParam, sumConverted, type Convert } from '../money.ts'
+import { categoryRows } from '../planning.ts'
+import { DEFAULT_CURRENCY, type Currency } from '../rates.ts'
 import { sandboxOf } from '../sandbox.ts'
 
 export const summaryRouter = Router()
-
-// Expenses saved before currencies existed have no currency field.
-const currencyOf = { $ifNull: ['$currency', DEFAULT_CURRENCY] }
-
-// Converts into `target`, fetching rates only if some amount is in another currency.
-function converterTo(target: Currency) {
-  let rates: Promise<Rates> | undefined
-  return async (cents: number, from: Currency) =>
-    from === target ? cents : convertCents(cents, from, target, await (rates ??= getRates()))
-}
-
-type Convert = ReturnType<typeof converterTo>
 
 async function totalBetween(sandbox: string | null, start: Date, end: Date, convert: Convert) {
   const rows = await Expense.aggregate<{ _id: Currency; total: number; count: number }>([
@@ -56,11 +40,8 @@ async function topCategory(sandbox: string | null, start: Date, end: Date, conve
 // Everything the dashboard shows for the current calendar month. Money is converted into the
 // `currency` query parameter, except `recent`, whose expenses keep the currency they were saved in.
 summaryRouter.get('/', async (req, res) => {
-  const requested = req.query.currency ?? DEFAULT_CURRENCY
-  if (!isCurrency(requested)) {
-    res.status(400).json({ error: 'Unsupported currency' })
-    return
-  }
+  const requested = currencyParam(req, res)
+  if (!requested) return
   const convert = converterTo(requested)
   const sandbox = sandboxOf(res)
 
@@ -69,12 +50,14 @@ summaryRouter.get('/', async (req, res) => {
   const nextMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1))
   const prevMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1))
 
-  const [month, prev, top, budget, recent] = await Promise.all([
+  const [month, prev, top, budget, recent, income, categories] = await Promise.all([
     totalBetween(sandbox, monthStart, nextMonthStart, convert),
     totalBetween(sandbox, prevMonthStart, monthStart, convert),
     topCategory(sandbox, monthStart, nextMonthStart, convert),
     Budget.findOne({ sandbox }),
     Expense.find({ sandbox }).sort({ date: -1, _id: -1 }).limit(5),
+    sumConverted(Income, { sandbox, date: { $gte: monthStart, $lt: nextMonthStart } }, convert),
+    categoryRows(sandbox, convert, monthStart, nextMonthStart),
   ])
 
   res.json({
@@ -83,7 +66,13 @@ summaryRouter.get('/', async (req, res) => {
     prevSpentCents: prev.total,
     transactions: month.count,
     budgetCents: budget ? Math.round(await convert(budget.monthlyCents, budget.currency ?? DEFAULT_CURRENCY)) : 0,
+    incomeCents: income,
     topCategory: top,
+    // Categories that have gone past their monthly limit, worst first.
+    overBudget: categories
+      .filter((c) => c.limitCents !== null && c.spentCents > c.limitCents)
+      .map((c) => ({ name: c.name, spentCents: c.spentCents, limitCents: c.limitCents! }))
+      .sort((a, b) => b.spentCents - b.limitCents - (a.spentCents - a.limitCents)),
     recent,
   })
 })

@@ -36,11 +36,21 @@ Then open <http://localhost:5181>. The compose file also runs the app in demo mo
 - **Expenses** – add and delete expenses with a title, category, optional description, date, currency and amount.
 - **Categories** – create and delete your own categories (ten defaults are added on first run). Each default has its own icon and is shown in the language you picked; your own categories are shown as typed. Names are unique ignoring case. Deleting a category never changes existing expenses.
 - **Monthly budget** – set a budget from the dashboard; it is stored in the currency you chose.
+- **Income** – record money coming in, in any supported currency. The dashboard then shows income, what is left, and your savings rate for the month.
+- **Budgeting methods** – the **Budgets** page supports four ways of planning the month, and you pick the active one: *category limits* (a monthly limit per category, with over/under for each), a *percentage split* between needs, wants and savings (50/30/20 pre-fills the form, but the percentages are yours), *zero-based* (income minus category limits, savings goals, minimum debt payments and yearly-bill set-asides, until nothing is unassigned) and *pay yourself first* (a savings share comes off income, the rest is what you can spend). It also shows where this month is heading at the current pace, and how spending splits between fixed and variable costs. Categories you push past their limit are listed on the dashboard.
+- **Fixed/variable and need/want** – classify each category on the **Categories** page. Nothing is classified for you, and anything left unclassified is reported as such.
+- **Recurring** – bills, subscriptions and paychecks that repeat weekly, monthly or yearly. When a date arrives the matching expense or income is added automatically (a start date in the past adds what was missed). Yearly bills show the monthly amount to set aside, as a sinking fund.
+- **Goals** – savings goals with an optional deadline (it works out what to save each month) and an emergency fund whose target is the number of months of *your own* average spending you choose. Deposit and withdraw at any time.
+- **Debts** – track balance, rate and minimum payment, record payments, and compare the avalanche (highest rate first) and snowball (smallest balance first) payoff orders, with an optional extra monthly payment. Interest is not added to the balance automatically, so edit the balance to match a statement; a payment larger than the balance is rejected.
+- **Reports** – income, spending, net and savings rate for the last 3, 6 or 12 months, month by month and by category, compared with the month before.
 - **Multiple currencies** – SEK, EUR, GBP, JPY, USD and TWD. Totals on the dashboard are converted into your display currency using daily rates from [open.er-api.com](https://www.exchangerate-api.com) (no API key needed). Rates are cached for 6 hours, and the last good copy is used if the provider is unreachable.
 - **Languages** – English, Svenska, 日本語 and 繁體中文（台灣）. The browser language is detected on first visit; change it any time in **Settings**.
-- **Light/dark theme**, remembered between visits.
+- **Light, dark or match-system theme**, remembered between visits. Choose it in **Settings**.
+- **Default entry currency** – in **Settings**, choose the currency new expenses, income, recurring items, goals and debts start in (it follows the display currency until you pick one). You can still change it on each form.
+- **Backup and restore** – in **Settings**, download everything as a JSON backup, or just the expenses or income as CSV for a spreadsheet. A backup can be restored later, which replaces the current data; a file is fully checked first, so a bad one changes nothing. **Delete all my data** empties the app and leaves the default categories.
+- **Exchange-rate status** – **Settings** shows the date of the rates in use and when they were last checked, warns when the provider can't be reached and the last saved rates are being used, and has a **Refresh rates** button.
 
-The **Budgets**, **Reports** and **Recurring** pages are placeholders for now.
+None of the new features ship with sample amounts: income, category limits, goals, debts and recurring items start empty and hold only what you enter.
 
 ## Tech stack
 
@@ -140,11 +150,15 @@ server/
   sandbox.ts        Per-visitor sandboxes: middleware, demo seeding, reset, cleanup
   demo.ts           Default categories and demo expenses
   rates.ts          Supported currencies, exchange-rate fetching/caching, conversion
-  models/           Mongoose models: Expense, Category, Budget
-  routes/           API routes: expenses, categories, budget, summary, rates, sandbox
+  money.ts          Currency conversion and month helpers shared by the routes
+  planning.ts       Month overview, goal and debt progress, category limits vs spending
+  recurring.ts      Turns due recurring items into expenses / income
+  debtPlan.ts       Avalanche and snowball payoff simulation
+  models/           Mongoose models: Expense, Income, Category, CategoryBudget, Budget, Goal, Debt, Recurring
+  routes/           API routes: expenses, income, categories, budget, summary, goals, debts, recurring, reports, rates, data, sandbox
 src/
   App.tsx           Page switching
-  pages/            Dashboard, Expenses, Categories, Settings, Placeholder
+  pages/            Dashboard, Expenses, Income, Categories, Budgets (and budgets/ method panels), Recurring, Goals, Debts, Reports, Settings
   components/       Layout (sidebar, header) and shared UI components
   config/           Navigation items and the icon for each default category
   i18n/             Language/currency preferences and message files (en, sv, ja, zh-TW)
@@ -168,9 +182,32 @@ All routes are under `/api`. In demo mode only, every request except `/api/healt
 | `DELETE /api/categories/:id` | Delete a category.                                                                               |
 | `GET /api/budget`         | The monthly budget (`monthlyCents`, `currency`).                                                    |
 | `PUT /api/budget`         | Set the monthly budget: `monthlyCents`, `currency?`.                                                |
+| `PUT /api/budget/method`  | Choose the budgeting method (`envelope`, `split`, `zeroBased`, `payFirst`) and its percentages: `split` needs `needsPercent`, `wantsPercent` and `savingsPercent` adding up to 100; `payFirst` needs `savingsPercent`. |
+| `GET /api/budget/categories` | The per-category monthly limits.                                                                 |
+| `PUT /api/budget/categories` | Set a category's monthly limit: `category` (must exist), `limitCents`, `currency?`.              |
+| `DELETE /api/budget/categories/:id` | Remove a category limit.                                                                  |
+| `GET /api/budget/overview` | This month's income, spending, savings, pace and per-category spending against limits, converted into `currency`. |
+| `PATCH /api/categories/:id` | Classify a category: `costType` (`fixed`/`variable`) and/or `necessity` (`need`/`want`); `null` clears one. |
+| `GET /api/income`, `POST /api/income`, `DELETE /api/income/:id` | List, add (`title`, `date`, `amountCents`, `currency`) and delete income. |
+| `GET /api/goals`          | Goals with progress, converted into `currency`. An emergency fund's target is derived from average monthly spending. |
+| `POST /api/goals`         | Create a goal: `name`, `kind` (`savings` needs `targetCents`, `deadline?`; `emergency` needs `targetMonths`), `currency`. |
+| `POST /api/goals/:id/contributions` | Add money (`amountCents`) or take it out (negative); a goal cannot go below zero. `DELETE /api/goals/:id` removes a goal. |
+| `GET /api/debts`          | Debts and both payoff plans, converted into `currency`. Optional `extra`: extra cents per month.   |
+| `POST /api/debts`         | Create a debt: `name`, `balanceCents`, `aprPercent`, `minPaymentCents`, `currency`.                |
+| `PATCH /api/debts/:id`    | Correct `balanceCents`, `aprPercent` or `minPaymentCents`. `POST /api/debts/:id/payments` records a payment; `DELETE /api/debts/:id` removes the debt. |
+| `GET /api/recurring`      | Recurring items with their monthly equivalent, plus totals and the yearly-bill sinking fund.         |
+| `POST /api/recurring`     | Create one: `kind` (`expense`/`income`), `title`, `amountCents`, `currency`, `frequency`, `startDate`, `category` (expenses). `PATCH /api/recurring/:id` with `active` pauses or resumes it; `DELETE` removes it. |
+| `GET /api/reports`        | Income and spending per month and per category for the last `months` months (1–24, default 6).      |
 | `GET /api/summary`        | Dashboard figures for the current month, converted into the `currency` query parameter (default `USD`). |
 | `POST /api/sandbox/reset` | Demo mode only: replace the sandbox's data with a fresh copy of the demo data.                      |
-| `GET /api/rates`          | Current exchange rates (base `USD`) and when the provider last updated them.                        |
+| `GET /api/rates`          | Current exchange rates (base `USD`), when the provider dated them (`updatedAt`), when this server last fetched them (`fetchedAt`) and whether the provider was unreachable on the latest try so an older copy is used (`stale`). |
+| `POST /api/rates/refresh` | Fetch the rates again now (at most once a minute; within that time the current ones are returned). Same response as `GET /api/rates`. |
+| `GET /api/data/export`    | Everything in the current dataset as one JSON backup (`app: "expenser"`, `version`, budget, categories, expenses, income, category limits, goals, debts, recurring). |
+| `GET /api/data/export/expenses.csv`, `GET /api/data/export/income.csv` | The expenses or the income as CSV (UTF-8 with a byte-order mark; amounts in major units, text that starts like a formula is prefixed with `'`). |
+| `POST /api/data/import`   | Replace the current data with a backup in the format above. Every row is validated first; a bad file returns `400` and changes nothing. In demo mode the usual caps apply. |
+| `DELETE /api/data`        | Delete everything in the current dataset and restore the default categories.                       |
+
+Due recurring items are turned into expenses and income whenever the data is read, so no scheduler is needed.
 
 In demo mode a missing or malformed `X-Sandbox-Id` returns `400`. Validation errors also return `400` with `{ "error": "..." }`. If exchange rates can't be fetched and none are cached, the API returns `503`.
 

@@ -7,13 +7,15 @@ export type IconName =
   | 'budgets'
   | 'reports'
   | 'recurring'
+  | 'income'
+  | 'edit'
+  | 'goals'
+  | 'debts'
   | 'settings'
   | 'menu'
   | 'close'
   | 'plus'
   | 'user'
-  | 'sun'
-  | 'moon'
   | 'housing'
   | 'groceries'
   | 'dining'
@@ -66,6 +68,27 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M21 13v1a4 4 0 0 1-4 4H3" />
     </>
   ),
+  edit: <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />,
+  income: (
+    <>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2.5" />
+      <path d="M6 12h.01M18 12h.01" />
+    </>
+  ),
+  goals: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" />
+    </>
+  ),
+  debts: (
+    <>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20M6 15h4" />
+    </>
+  ),
   settings: (
     <>
       <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
@@ -75,13 +98,6 @@ const paths: Record<IconName, ReactNode> = {
   menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   close: <path d="M18 6 6 18M6 6l12 12" />,
   plus: <path d="M12 5v14M5 12h14" />,
-  sun: (
-    <>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-    </>
-  ),
-  moon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />,
   user: (
     <>
       <circle cx="12" cy="8" r="4" />

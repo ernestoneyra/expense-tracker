@@ -37,6 +37,27 @@ categoriesRouter.post('/', async (req, res) => {
   }
 })
 
+// Classifies a category (fixed/variable, need/want). A null clears the field.
+categoriesRouter.patch('/:id', async (req, res) => {
+  const body = req.body ?? {}
+  const $set: Record<string, unknown> = {}
+  const $unset: Record<string, 1> = {}
+  for (const field of ['costType', 'necessity']) {
+    if (body[field] === null) $unset[field] = 1
+    else if (body[field] !== undefined) $set[field] = body[field]
+  }
+  const category = await Category.findOneAndUpdate(
+    { _id: req.params.id, sandbox: sandboxOf(res) },
+    { $set, $unset },
+    { returnDocument: 'after', runValidators: true },
+  )
+  if (!category) {
+    res.status(404).json({ error: 'Category not found' })
+    return
+  }
+  res.json(category)
+})
+
 // Expenses keep the name they were saved with, so deleting a category never touches them.
 categoriesRouter.delete('/:id', async (req, res) => {
   const deleted = await Category.findOneAndDelete({ _id: req.params.id, sandbox: sandboxOf(res) })

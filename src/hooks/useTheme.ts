@@ -1,37 +1,43 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 
-export type Theme = 'light' | 'dark'
+/** What the person chose: a fixed theme, or whatever the system is set to. */
+export type ThemePreference = 'light' | 'dark' | 'system'
 
 const STORAGE_KEY = 'expenser-theme'
 
-function getInitialTheme(): Theme {
+const isPreference = (value: unknown): value is ThemePreference =>
+  value === 'light' || value === 'dark' || value === 'system'
+
+function readPreference(): ThemePreference {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'light' || saved === 'dark') return saved
+    if (isPreference(saved)) return saved
   } catch {
     // Storage can be unavailable (private mode); fall back to the system setting.
   }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return 'system'
+}
+
+let preference = readPreference()
+const listeners = new Set<() => void>()
+const subscribe = (listener: () => void) => {
+  listeners.add(listener)
+  return () => void listeners.delete(listener)
+}
+
+function setPreference(next: ThemePreference) {
+  preference = next
+  try {
+    localStorage.setItem(STORAGE_KEY, next)
+  } catch {
+    // Ignore: the choice just won't persist.
+  }
+  // Without data-theme the stylesheet follows the system by itself.
+  if (next === 'system') delete document.documentElement.dataset.theme
+  else document.documentElement.dataset.theme = next
+  listeners.forEach((listener) => listener())
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme)
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
-
-  const toggleTheme = useCallback(() => {
-    setTheme((current) => {
-      const next = current === 'dark' ? 'light' : 'dark'
-      try {
-        localStorage.setItem(STORAGE_KEY, next)
-      } catch {
-        // Ignore: the choice just won't persist.
-      }
-      return next
-    })
-  }, [])
-
-  return { theme, toggleTheme }
+  return { preference: useSyncExternalStore(subscribe, () => preference), setPreference }
 }

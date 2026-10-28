@@ -1,31 +1,36 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { AppLayout } from './components/layout/AppLayout.tsx'
-import { navItems, type NavId } from './config/navigation.ts'
-import { usePreferences } from './i18n/PreferencesContext.ts'
+import type { NavId } from './config/navigation.ts'
+import { Budgets } from './pages/Budgets.tsx'
 import { Categories } from './pages/Categories.tsx'
 import { Dashboard } from './pages/Dashboard.tsx'
+import { Debts } from './pages/Debts.tsx'
 import { Expenses } from './pages/Expenses.tsx'
-import { Placeholder } from './pages/Placeholder.tsx'
+import { Goals } from './pages/Goals.tsx'
+import { Income } from './pages/Income.tsx'
+import { Recurring } from './pages/Recurring.tsx'
+import { Reports } from './pages/Reports.tsx'
 import { Settings } from './pages/Settings.tsx'
+
+const pages: Record<NavId, ReactNode> = {
+  dashboard: <Dashboard />,
+  expenses: <Expenses />,
+  income: <Income />,
+  categories: <Categories />,
+  budgets: <Budgets />,
+  recurring: <Recurring />,
+  goals: <Goals />,
+  debts: <Debts />,
+  reports: <Reports />,
+  settings: <Settings />,
+}
 
 function App() {
   const [active, setActive] = useState<NavId>('dashboard')
-  const { t } = usePreferences()
-  const current = navItems.find((item) => item.id === active)!
 
   return (
     <AppLayout active={active} onNavigate={setActive}>
-      {active === 'dashboard' ? (
-        <Dashboard />
-      ) : active === 'expenses' ? (
-        <Expenses />
-      ) : active === 'categories' ? (
-        <Categories />
-      ) : active === 'settings' ? (
-        <Settings />
-      ) : (
-        <Placeholder title={t(current.labelKey)} />
-      )}
+      {pages[active]}
     </AppLayout>
   )
 }
