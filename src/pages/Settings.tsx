@@ -147,8 +147,6 @@ export function Settings() {
     <div className="flex max-w-275 flex-col gap-6">
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} glossary />
 
-      <AccountCard />
-
       <Card className="flex flex-col gap-3 p-4 nav:p-5" aria-labelledby="display-title">
         <h2 id="display-title" className="font-semibold text-strong">
           {t('settings.displayTitle')}
@@ -292,6 +290,8 @@ export function Settings() {
           <StatusLine status={resetStatus} />
         </Card>
       )}
+
+      <AccountCard />
 
       {confirming === 'reset' && (
         <ConfirmToast
