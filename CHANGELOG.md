@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-28
+
+The first stable release. Expenser now has accounts, so it can be used by more than one person, and its security and accessibility work is documented. Read **Changed** first if you are upgrading: the API now needs a sign-in, and data saved by an earlier version has to be claimed.
+
 ### Added
 
 - **Accounts, and an OAuth 2.0 server of its own.** Everyone now signs in, and has their own private expenses, budgets, goals, debts and recurring items; nothing is shared between accounts.
@@ -30,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Browser requests that change data from another site are refused. The server sends a Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, a referrer policy and HSTS over HTTPS, and account, token and data responses are `no-store`.
 - **NoSQL operator injection** (the app is MongoDB, so there is no SQL): an audit of every query found none exploitable, because each handler validates its input, but nothing enforced that. Now a request with an operator or path as a field name (`$ne`, `a.b`, `a[$gt]`, `__proto__`) is refused with a `400` before any route runs, and Mongoose's `sanitizeFilter` makes an operator that reaches a query anyway a literal value (filters the app writes itself are marked `trusted()`). `npm run security` sends about 840 injection payloads at every endpoint, including login, the token endpoints and the backup import.
 - `POST /api/expenses` refuses a `description` that isn't text instead of silently dropping it.
+- Documentation: the README gains an "Upgrading from 0.x" section, and [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) no longer says there is no sign-in or an inactive Account button.
 - Google and GitHub accounts are matched by the provider's account id, never by email, so registering with someone's address can't take over their account.
 
 ### Changed
@@ -142,6 +147,8 @@ First tracked release of Expenser, a personal expense tracker.
 - `.env.example` and a README with screenshots, a feature list and setup instructions.
 - Placeholder pages for Budgets, Reports and Recurring expenses.
 
+[Unreleased]: https://github.com/ernestoneyra/expense-tracker/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.8.0...1.0.0
 [0.8.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.1...0.7.0
 [0.6.1]: https://github.com/ernestoneyra/expense-tracker/compare/0.6.0...0.6.1

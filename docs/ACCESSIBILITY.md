@@ -40,7 +40,7 @@ Expenser is built to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) at **level A
 | **3.2.5** Change on Request | Partly met | Nothing opens or moves on its own. Language, theme and currency in Settings change the page as soon as you pick them (Settings says so); the category drop-downs save immediately. |
 | **3.3.5** Help | Mostly met | The form fields have short help text read out with the field. The quick "deposit" and "record payment" forms on goals and debts do not. |
 | **3.3.6** Error Prevention (All) | Met | Deleting anything, restoring a backup and deleting all data ask first, in a dialog; adding or changing data can be undone by editing or deleting it. |
-| **3.3.9** Accessible Authentication (Enhanced), **2.2.5** Re-authenticating | Not applicable | There is no sign-in. |
+| **3.3.9** Accessible Authentication (Enhanced), **2.2.5** Re-authenticating | Met | Signing in needs only a username and password: no puzzle, memory test or transcription. Fields are marked `autocomplete="username"`, `current-password` and `new-password`, so password managers can fill them in. Errors are announced and take focus. Google and GitHub sign-in is an alternative that needs no typing. |
 | **1.2.6 – 1.2.9**, **1.4.7**, **3.1.6** | Not applicable | There is no audio or video, and no ambiguous pronunciation. |
 
 Levels A and AA: the same checks find no failures, including for 1.4.1 (colour is never the only cue: the chosen option has a border and bold text, the current page has a bar), 1.4.10 reflow, 1.4.12 text spacing, 2.4.1 (skip link), 2.4.2 (page titles), 2.4.3 (focus moves to the page after you navigate), 2.5.8 (target size) and 4.1.3 (a live region announces "Saved." and "Deleted."). That is a result of automated and keyboard testing, not a formal audit.
@@ -56,7 +56,7 @@ When you add something, keep to the same pieces: use the shared buttons and fiel
 
 ## Known gaps
 
-- The header has an "Account" button that does nothing yet (a placeholder for future accounts). It has a name and a 44 px target but no action.
+- The sign-in and registration pages and the account menu are covered by `npm run a11y`, but, like the rest of the app, have not been tried with a real screen reader.
 - Drop-downs, date pickers and file pickers are the browser's own controls, so how well they work depends on the browser and assistive technology.
 - Category names you type are shown as typed and are not marked with their own language (3.1.2).
 - Japanese, Chinese and Swedish text was not written or reviewed by native speakers.

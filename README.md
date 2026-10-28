@@ -1,6 +1,8 @@
 # Expenser
 
-A personal expense tracker. Log what you spend, organise it into categories, set a monthly budget, and see how the current month compares to the last. Amounts can be entered in different currencies and are converted using live exchange rates.
+A personal finance tracker. Log what you spend and earn, organise it into categories, plan the month with a budgeting method of your choice, track goals, debts and recurring bills, and see how the current month compares to the last. Amounts can be entered in different currencies and are converted using live exchange rates. Each person signs in to their own private account, and the app is built to WCAG 2.2 level AAA wherever an app can reach it.
+
+Version 1.0.0. See the [changelog](CHANGELOG.md) for what each release added, including what to do when [upgrading from 0.x](#upgrading-from-0x).
 
 ## Try it
 
@@ -73,6 +75,7 @@ None of the new features ship with sample amounts: income, category limits, goal
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4             |
 | Backend  | Node.js, Express 5, Mongoose                           |
 | Database | MongoDB (Atlas or a local instance)                    |
+| Sign-in  | The app's own OAuth 2.0 server (authorization code + PKCE, JWT access tokens), optionally Google and GitHub |
 
 ## Prerequisites
 
@@ -125,6 +128,17 @@ None of the new features ship with sample amounts: income, category limits, goal
 4. **Sign in**
 
    The first start creates two demo accounts with sample data: **`guest1`** and **`guest2`**, both with the password **`password`**. Or choose **Create account**. If you used the app before accounts existed, your old data belongs to nobody yet: register an account, then run `npm run claim-data -- <username>` to move it there.
+
+## Upgrading from 0.x
+
+Version 1.0.0 adds accounts, and the API now needs a sign-in. If you ran an earlier version against the same database:
+
+1. Pull the new version, run `npm install`, and start the app.
+2. Register an account (or sign in as `guest1`/`guest2` if you only want to try it). Data saved before accounts existed has no owner yet, so it won't show up.
+3. Run `npm run claim-data -- <username>` to move it to your account. It only works on an account that is still empty.
+4. For a deployment with real users, set `APP_URL`, `TRUST_PROXY` (when behind a proxy), `OAUTH_SIGNING_KEY` and `SEED_GUESTS=false`; see [Getting started](#getting-started).
+
+Anything that called the API directly, without a token, needs updating: see [API](#api).
 
 ## Accounts and sign-in
 
